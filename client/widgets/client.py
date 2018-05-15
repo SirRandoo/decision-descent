@@ -28,8 +28,8 @@ import os
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from client import utils
-from client.utils import dataclasses
+import utils
+from utils import dataclasses
 from . import http, info, metadata, tray
 from .uis import ClientUi
 
@@ -109,8 +109,8 @@ class Client(QtWidgets.QMainWindow):
             
             try:
                 integration.load(self)
-            
-            except client.utils.errors.MethodMissingError as e:
+
+            except utils.errors.MethodMissingError as e:
                 self.logger.warning(f'Integration "{item_path}" could not be loaded!')
                 self.logger.warning(str(e))
                 failed += 1

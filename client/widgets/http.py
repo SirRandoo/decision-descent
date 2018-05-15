@@ -27,7 +27,7 @@ import typing
 import ujson
 from PyQt5 import QtCore, QtNetwork
 
-from client.utils.dataclasses import Message
+from utils.dataclasses import Message
 
 __all__ = {"HttpListener"}
 
