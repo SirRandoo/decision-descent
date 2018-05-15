@@ -1,4 +1,3 @@
-ujson
 configobj
 markdown
 PyQt5

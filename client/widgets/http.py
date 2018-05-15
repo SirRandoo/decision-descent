@@ -21,10 +21,10 @@
 #
 # Author: RandomShovel
 # File Date: 11/24/2017
+import json
 import logging
 import typing
 
-import ujson
 from PyQt5 import QtCore, QtNetwork
 
 from utils.dataclasses import Message
@@ -78,7 +78,7 @@ class HttpListener(QtCore.QObject):
         unencoded_message = message.to_dict()
         
         self.logger.info("Transforming message dict to string...")
-        unencoded_message = ujson.dumps(unencoded_message)  # type: str
+        unencoded_message = json.dumps(unencoded_message)  # type: str
         
         if not unencoded_message.endswith("\r\n"):
             unencoded_message += "\r\n"
@@ -110,7 +110,7 @@ class HttpListener(QtCore.QObject):
                     data = data.data().decode()  # type: str
                     
                     try:
-                        json_data = ujson.loads(data)  # type: dict
+                        json_data = json.loads(data)  # type: dict
                     
                     except ValueError:
                         self.logger.warning("Received non-JSON response from connected client!")
