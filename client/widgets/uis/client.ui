@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>ClientApp</class>
+    <widget class="QMainWindow" name="ClientApp">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>571</width>
+                <height>407</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Decision Descent - Client</string>
+        </property>
+        <widget class="QWidget" name="app_central">
+            <layout class="QGridLayout" name="gridLayout">
+                <item row="0" column="0">
+                    <widget class="QTextBrowser" name="log">
+                        <property name="lineWrapMode">
+                            <enum>QTextEdit::NoWrap</enum>
+                        </property>
+                    </widget>
+                </item>
+            </layout>
+        </widget>
+        <widget class="QMenuBar" name="menu_bar">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>571</width>
+                    <height>21</height>
+                </rect>
+            </property>
+            <widget class="QMenu" name="menu_menu">
+                <property name="title">
+                    <string>Menu</string>
+                </property>
+                <addaction name="menu_quit"/>
+            </widget>
+            <widget class="QMenu" name="menu_settings">
+                <property name="title">
+                    <string>Settings</string>
+                </property>
+            </widget>
+            <widget class="QMenu" name="menu_help">
+                <property name="title">
+                    <string>Help</string>
+                </property>
+                <addaction name="help_help"/>
+                <addaction name="help_about"/>
+                <addaction name="separator"/>
+                <addaction name="help_license"/>
+            </widget>
+            <addaction name="menu_menu"/>
+            <addaction name="menu_settings"/>
+            <addaction name="menu_help"/>
+        </widget>
+        <action name="menu_quit">
+            <property name="text">
+                <string>Quit</string>
+            </property>
+            <property name="shortcut">
+                <string>Ctrl+Q</string>
+            </property>
+        </action>
+        <action name="help_about">
+            <property name="text">
+                <string>About</string>
+            </property>
+            <property name="shortcut">
+                <string>Ctrl+A</string>
+            </property>
+        </action>
+        <action name="help_help">
+            <property name="text">
+                <string>Help</string>
+            </property>
+            <property name="shortcut">
+                <string>Ctrl+H</string>
+            </property>
+        </action>
+        <action name="help_license">
+            <property name="text">
+                <string>License</string>
+            </property>
+            <property name="shortcut">
+                <string/>
+            </property>
+        </action>
+    </widget>
+    <layoutdefault spacing="6" margin="11"/>
+    <resources/>
+    <connections/>
+</ui>

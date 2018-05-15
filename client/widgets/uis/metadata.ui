@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>MetadataDialog</class>
+    <widget class="QDialog" name="MetadataDialog">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>291</width>
+                <height>132</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Decision Descent: Client - Metadata</string>
+        </property>
+        <property name="windowIcon">
+            <iconset>
+                <normaloff>../../assets/icon.png</normaloff>../../assets/icon.png
+            </iconset>
+        </property>
+        <property name="sizeGripEnabled">
+            <bool>true</bool>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+            <property name="labelAlignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="leftMargin">
+                <number>12</number>
+            </property>
+            <property name="topMargin">
+                <number>12</number>
+            </property>
+            <property name="rightMargin">
+                <number>12</number>
+            </property>
+            <property name="bottomMargin">
+                <number>12</number>
+            </property>
+            <item row="0" column="0">
+                <widget class="QLabel" name="nameLabel">
+                    <property name="text">
+                        <string>Name</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="0" column="1">
+                <widget class="QLabel" name="name">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+            <item row="1" column="0">
+                <widget class="QLabel" name="versionLabel">
+                    <property name="text">
+                        <string>Version</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="1" column="1">
+                <widget class="QLabel" name="version">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+            <item row="2" column="0">
+                <widget class="QLabel" name="license_label">
+                    <property name="text">
+                        <string>License</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="2" column="1">
+                <widget class="QLabel" name="license">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                    <property name="openExternalLinks">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+            <item row="3" column="0">
+                <widget class="QLabel" name="created_by_label">
+                    <property name="text">
+                        <string>Created By</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="3" column="1">
+                <widget class="QLabel" name="created_by">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+            <item row="4" column="0">
+                <widget class="QLabel" name="website_label">
+                    <property name="text">
+                        <string>Website</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="4" column="1">
+                <widget class="QLabel" name="website">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                    <property name="openExternalLinks">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+            <item row="5" column="0">
+                <widget class="QLabel" name="docs_label">
+                    <property name="text">
+                        <string>Docs</string>
+                    </property>
+                </widget>
+            </item>
+            <item row="5" column="1">
+                <widget class="QLabel" name="docs">
+                    <property name="text">
+                        <string/>
+                    </property>
+                    <property name="wordWrap">
+                        <bool>true</bool>
+                    </property>
+                    <property name="openExternalLinks">
+                        <bool>true</bool>
+                    </property>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+    <resources/>
+    <connections/>
+</ui>

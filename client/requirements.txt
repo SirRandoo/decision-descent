@@ -1,0 +1,8 @@
+ujson
+configobj
+markdown
+PyQt5
+
+git+https://github.com/sirrandoo/qtutilities#egg=QtUtilities
+git+https://github.com/sirrandoo/qttwitch#egg=QtTwitch
+
