@@ -1,0 +1,80 @@
+# ----
+# Site
+
+title: Decision Descent&#58; Client Documentation
+url:
+baseurl:
+google_analytics_key:
+show_full_navigation: true
+repository: SirRandoo/Decision-Descent
+
+# Values for the jekyll-seo-tag gem (https://github.com/jekyll/jekyll-seo-tag)
+logo: /siteicon.png
+description: Product documentation template for Jekyll.
+author:
+  name: SirRandoo
+  email:
+  twitter: SirRandoo
+social:
+  name: Edition Template
+  links:
+    - https://github.com/CloudCannon/edition-jekyll-template
+
+# -----
+# Build
+
+permalink: pretty
+
+plugins:
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jekyll-feed
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - LICENCE
+  - docs.qhp
+  - docs.qcp
+  - Create QtHelp File.py
+  - .gitignore
+
+collections:
+  docs:
+    title: Documentation
+    permalink: /:path
+    output: true
+
+defaults:
+  -
+    scope:
+      path: ""
+    values:
+      layout: default
+  -
+    scope:
+      path: ""
+      type: "docs"
+    values:
+      seo:
+        type: Article
+      _comments:
+        category: Group navigation links with this field
+        order: Used to sort links in the navigation
+      _options:
+        content:
+          width: 800
+          height: 2000
+  -
+    scope:
+      path: ""
+      type: "posts"
+    values:
+      _comments:
+        type: Marks the impact of this release
+
+types:
+  - major
+  - minor
+  - bugfix

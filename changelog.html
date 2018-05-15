@@ -1,0 +1,22 @@
+---
+title: Change Log
+permalink: changelog
+---
+
+<p>Subscribe with <a href="{{ site.baseurl }}/feed.xml">RSS</a> to keep up with the latest changes.</p>
+
+
+<div class="changelog">
+	{% for change in site.posts %}
+		<div class="changelog-item">
+            {%- capture changeDate -%}
+            {{- change.date | date: "%Y-%m-%d" -}}
+            {%- endcapture -%}
+
+			<h3 id="{{ changeDate | slugify }}">{{ change.title }}</h3>
+			<p><span class="date">{{ changeDate }}</span> <span class="badge {{ change.type }}">{{ change.type }}</span></p>
+
+			{{ change.content }}
+		</div>
+	{% endfor %}
+</div>

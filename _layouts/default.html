@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="generator" content="Jekyll v{{ jekyll.version }}">
+
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Merriweather:400,400italic,700,700italic|Open+Sans:400,400italic,600,600italic,700,700italic|Inconsolata:400,700">
+		<link rel="stylesheet" href="{{ site.baseurl }}/css/main.css">
+
+		<link rel="icon" type="image/png" href="{{ site.baseurl }}/images/favicon.png">
+		<link rel="apple-touch-icon" href="{{ site.baseurl }}/images/apple-touch-icon.png">
+		<link rel="icon" type="image/png" href="{{ site.baseurl }}/images/touch-icon.png" sizes="192x192">
+
+		{% feed_meta %}
+		{% seo %}
+
+		{% if jekyll.environment == 'production' and site.google_analytics_key != '' %}
+			<script>
+				(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){
+				(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+				m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+				})(window,document,"script","//www.google-analytics.com/analytics.js","ga");
+
+				ga("create", "{{ site.google_analytics_key }}", "auto");
+				ga("send", "pageview");
+			</script>
+		{% endif %}
+	</head>
+
+	<body>
+		<header>
+			<h1>
+                <!-- Navbar button & title -->
+				<a href="{{ site.baseurl }}/"><img src="{{ site.baseurl }}/images/favicon.png" width="40" height="40" alt="{{ site.title }} logo"></a>
+				{{- site.title -}}
+				<button type="button" class="open-nav" id="open-nav"></button>
+			</h1>
+
+			<form action="{{ site.baseurl }}/search/" method="get">
+                <!-- Navbar search button -->
+				<input type="text" name="q" id="search-input" placeholder="Search" autofocus>
+				<input type="submit" value="Search" style="display: none;">
+			</form>
+            
+            <!-- Navbar definition -->
+			<nav {% if site.show_full_navigation %}class="full-navigation"{% endif %}>
+                <!-- Welcome navbar item -->
+				<ul>
+					<li class="nav-item top-level {% if page.url == '/' %}current{% endif %}">
+						{%- assign home = site.html_pages | where: 'url', '/' | first -%}
+						<a href="{{ site.baseurl }}/">{{ home.title }}</a>
+					</li>
+				</ul>
+
+				<ul>
+					{%- assign grouped = site.docs | group_by: 'category' -%}
+					{%- for group in grouped -%}
+						{%- capture lower_group_name -%}
+							{{- group.name | downcase -}}
+						{%- endcapture -%}
+
+						{%- capture lower_group_url -%}
+							/{{- lower_group_name -}}/
+						{%- endcapture -%}
+
+						{%- if lower_group_name == "special" -%}
+						{%- else -%}
+							{%- for item in group.items -%}
+								{%- if item.url != lower_group_url -%}
+									{%- capture maybe_index -%}
+									{{- item.path | match_regex: '/(index)\.(?:html|md)$' -}}
+									{%- endcapture -%}
+
+									{%- if maybe_index contains "index" or maybe_index contains lower_group_name -%}
+										{%- assign index_file = item -%}
+                                        {%- capture index_url -%}
+                                        {{- index_file.url | remove: "index" -}}
+                                        {%- endcapture -%}
+									{%- endif -%}
+								{%- else -%}
+									{%- assign index_file = item -%}
+								{%- endif -%}
+							{%- endfor -%}
+
+							<li class="nav-item top-level {% if group.name == page.category %}current{% endif %}">
+								{%- assign items = group.items | sort: 'order' -%}
+                                <a href="{{ index_url }}">{{- group.name -}}</a>
+
+								<ul>
+									{%- for item in items -%}
+										{%- if index_file and item.url == index_file.url -%}
+											<!--<li class="nav-item {% if item.url == page.url %}current{% endif %}"><a href="{{ site.baseurl }}{{ item.url }}">{{- item.title -}}</a></li>-->
+										{%- else -%}
+											<li class="nav-item {% if item.url == page.url %}current{% endif %}"><a href="{{ site.baseurl }}{{ item.url }}">{{- item.title -}}</a></li>
+										{%- endif -%}
+									{%- endfor -%}
+								</ul>
+							</li>
+						{%- endif -%}
+
+						{%- assign index_file=nil -%}
+					{%- endfor -%}
+				</ul>
+
+				<ul>
+					<!--
+						The changelog should be one of the last pages, but
+						the credits page is the absolute last.  So that leaves
+						the FAQ somewhere before the credits page, and somewhere
+						near the changelog.  I'll just put it before the changelog
+						page.
+					-->
+
+					<li class="nav-item top-level {% if page.url == '/faq' %}current{% endif %}">
+						{%- assign faq = site.html_pages | where: 'url', '/faq' | first -%}
+						<a href="{{ site.baseurl }}/faq">{{- faq.title -}}</a>
+					</li>
+
+					<li class="nav-item top-level {% if page.url == '/changelog' %}current{% endif %}">
+						{%- assign changelog = site.html_pages | where: 'url', '/changelog' | first -%}
+						<a href="{{ site.baseurl }}/changelog">{{- changelog.title -}}</a>
+					</li>
+
+					<li class="nav-item top-level {% if page.url == '/credits'
+						%}current{% endif %}">
+						{%- assign credits = site.html_pages | where: 'url', '/credits' | first -%}
+						<a href="{{ site.baseurl }}/credits">{{- credits.title -}}</a>
+					</li>
+				</ul>
+			</nav>
+		</header>
+
+		<section class="main">
+			<div class="page-header">
+				<h2>
+					{%- if page.category -%}
+						{{- page.category -}}
+					{%- else -%}
+						{{- site.title -}}
+					{%- endif -%}
+				</h2>
+				<h3>{{- page.title -}}</h3>
+			</div>
+			<article class="content">
+				{{- content -}}
+			</article>
+		</section>
+
+		<script>
+			var possible_headers = ["h1", "h2", "h3", "h4", "h5", "h6"];
+
+			document.getElementById("open-nav").addEventListener("click", function () {
+				document.body.classList.toggle("nav-open");
+			});
+
+			document.addEventListener("DOMContentLoaded", onContentLoaded);
+
+			function onContentLoaded() {
+                // Variables
+                var currentNav = null;
+                var possibleNavs = document.getElementsByClassName("nav-item current");
+                var content = document.getElementsByClassName("content")[0];
+                var navBase = document.createElement("ul");
+                var currentNavClassName = "nav-sub-item";
+                var currentNavText = "";
+                
+                // Get current nav item
+                for (var a=0; a < possibleNavs.length; a++) {
+                    var element = possibleNavs[a];
+                    
+                    if (element.className.includes("top-level")) {
+                        currentNavClassName = "nav-item";
+                        currentNav = element;
+                        currentNavText = element.children[0].innerText;
+                    } else {
+                        currentNavClassName = "nav-sub-item";
+                        currentNav = element;
+                    }
+                }
+                
+                
+                // Build a custom page nav depending on the current page we're on
+                if (currentNavText == "Change Log") {
+                    var changelog = document.getElementsByClassName("changelog")[0];
+                    var changes = changelog.getElementsByClassName("changelog-item");
+                    
+                    for (var b=0; b < changes.length; b++) {
+                        var change = changes[b];
+                        var changeHeader = change.getElementsByTagName("h3")[0];
+                        var changeDate = change.getElementsByClassName("date")[0];
+                        var changeNavItem = document.createElement("li");
+                        var changeNavLink = document.createElement("a");
+                        
+                        changeNavLink.href = "#" + changeHeader.id;
+                        changeNavLink.innerText = changeDate.innerText;
+                        changeNavItem.className = currentNavClassName;
+                        
+                        changeNavItem.appendChild(changeNavLink);
+                        navBase.appendChild(changeNavItem);
+                    }
+                    
+                } else {
+                    var curHeaderNum = 1;
+                    
+                    for (var x=0; x < content.children.length; x++) {
+                        var e = content.children[x];
+                        
+                        if (e.tagName.startsWith("H")) {
+                            var headerEntry = document.createElement("li");
+                            var headerLink = document.createElement("a");
+                            
+                            headerLink.href = "#" + e.id;
+                            headerLink.innerText = e.innerText;
+                            headerEntry.className = currentNavClassName;
+                            
+                            headerEntry.appendChild(headerLink);
+                            navBase.appendChild(headerEntry);
+                        }
+                    }
+                }
+                
+                currentNav.appendChild(navBase);
+			};
+		</script>
+	</body>
+</html>
