@@ -21,6 +21,7 @@
 #  
 #  Author: RandomShovel
 #  File Creation Date: 7/21/2017
+import datetime
 import logging
 import os
 
@@ -64,3 +65,75 @@ class DescentFormatter(logging.Formatter):
         item = item.replace("[<module>]", "[__main__]", 1)
         
         return item
+
+
+def format_isaac(input_text: str) -> str:
+    log_format = "[{time}][{level}][{name}][{function}] {message}"
+    input_text = input_text.strip()
+    
+    if not input_text.startswith("["):
+        _temp = log_format.format(
+            time=datetime.datetime.now().strftime("%H:%M:%S"),
+            level="INFO",
+            name="isaac",
+            function="core",
+            message=input_text.strip()
+        )
+        return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>'
+    
+    else:
+        if input_text.startswith("[INFO] - ERR"):
+            input_text = input_text.replace("[INFO] - ERR: ", "", 1)
+            _temp = log_format.format(
+                time=datetime.datetime.now().strftime("%H:%M:%S"),
+                level="WARNING",
+                name="isaac",
+                function="api",
+                message=input_text.strip()
+            )
+            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>'
+        
+        elif input_text.startswith("[INFO] - There was an error running the lua file:"):
+            input_text = input_text.replace("[INFO] - ", "", 1)
+            _temp = log_format.format(
+                time=datetime.datetime.now().strftime("%H:%M:%S"),
+                level="WARNING",
+                name="isaac",
+                function="api",
+                message=input_text.strip()
+            )
+            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>'
+        
+        elif input_text.startswith("[INFO] - Lua Debug: ["):
+            input_text = input_text.replace("[INFO] - Lua Debug: ", "", 1)
+            
+            for level, color in Log.colors.items():
+                if input_text.startswith(f"[{level}]"):
+                    input_text = "[{}]{}".format(
+                        datetime.datetime.now().strftime("%H:%M:%S"),
+                        input_text.strip()
+                    )
+                    
+                    return f'<span style="color: #{color}">{input_text}</span><br/>'
+        
+        elif input_text.startswith("[INFO] - Lua Debug: "):
+            input_text = input_text.replace("[INFO] - Lua Debug: ", "", 1)
+            _temp = log_format.format(
+                time=datetime.datetime.now().strftime("%H:%M:%S"),
+                level="DEBUG",
+                name="isaac",
+                function="LuaDebug",
+                message=input_text.strip()
+            )
+            return f'<span style="color: #{Log.colors["DEBUG"]}">{_temp}</span><br/>'
+        
+        elif input_text.startswith("[INFO]"):
+            input_text = input_text.replace("[INFO] - ", "", 1)
+            _temp = log_format.format(
+                time=datetime.datetime.now().strftime("%H:%M:%S"),
+                level="INFO",
+                name="isaac",
+                function="core",
+                message=input_text.strip()
+            )
+            return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>'

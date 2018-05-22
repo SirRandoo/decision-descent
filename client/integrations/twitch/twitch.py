@@ -45,7 +45,7 @@ class Twitch(QtWidgets.QDialog):
         #  Internal attributes  #
         self._quitting = False
         self._client = client
-        self._config = client.config
+        self._config = client.configs
         self._client_data = client.data
         self._twitch = QtTwitch.Client(nick=self._config["settings"]["twitch"]["username"],
                                        token=self._config["settings"]["twitch"]["token"])
@@ -94,5 +94,5 @@ class Twitch(QtWidgets.QDialog):
                     for alias in choice.aliases:
                         if message.content.lower().startswith(alias):
                             poll.instance.add_participant(message.author, choice.id)
-        
-        self.logger.info(f"{message.author}: {message.content}")
+
+        self.logger.info(f"[Twitch] {message.author}: {message.content}")

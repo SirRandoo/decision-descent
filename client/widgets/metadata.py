@@ -42,59 +42,59 @@ class MetadataDialog(QtWidgets.QDialog):
         
         # Assignments #
         if "name" in kwargs:
-            self.setProjectName(kwargs.pop("name"))
+            self.set_project_name(kwargs.pop("name"))
         
         if "version" in kwargs:
-            self.setProjectVersion(kwargs.pop("version"))
+            self.set_project_version(kwargs.pop("version"))
         
         if "license" in kwargs:
-            self.setProjectLicense(kwargs.pop("license"), kwargs.pop("license_url", None))
+            self.set_project_license(kwargs.pop("license"), kwargs.pop("license_url", None))
         
         if "authors" in kwargs:
-            self.setProjectAuthors(*kwargs.pop("authors"))
+            self.set_project_authors(*kwargs.pop("authors"))
         
         if "website" in kwargs:
-            self.setProjectWebsite(kwargs.pop("website"))
+            self.set_project_website(kwargs.pop("website"))
         
         if "docs" in kwargs:
-            self.setProjectDocs(kwargs.pop("docs"))
-    
-    def setProjectName(self, name: str) -> 'MetadataDialog':
+            self.set_project_docs(kwargs.pop("docs"))
+
+    def set_project_name(self, name: str) -> 'MetadataDialog':
         """Sets the name of the project.  This is displayed in the "name" row."""
         self._ui.name.setText(name)
         
         return self
-    
-    def setProjectVersion(self, version: str) -> 'MetadataDialog':
+
+    def set_project_version(self, version: str) -> 'MetadataDialog':
         """Sets the version of the project.  This is displayed in the "version" row."""
         self._ui.version.setText(version)
         
         return self
-    
-    def setProjectLicense(self, license_: str, license_url: str = None) -> 'MetadataDialog':
+
+    def set_project_license(self, license_name: str, license_url: str = None) -> 'MetadataDialog':
         """Sets the license of the project.  This is displayed in the "license" row."""
         if license_url is not None:
-            self._ui.license.setText(f'<a href="{license_url}">{license_}</a>')
+            self._ui.license.setText(f'<a href="{license_url}">{license_name}</a>')
         
         else:
-            self._ui.license.setText(license_)
+            self._ui.license.setText(license_name)
         
         return self
-    
-    def setProjectAuthors(self, *authors: str) -> 'MetadataDialog':
+
+    def set_project_authors(self, *authors: str) -> 'MetadataDialog':
         """Sets the authors of the project.  This is displayed in the
         "created by" row."""
         self._ui.created_by.setText("; ".join([str(a) for a in authors]))
         
         return self
-    
-    def setProjectWebsite(self, website: str) -> 'MetadataDialog':
+
+    def set_project_website(self, website: str) -> 'MetadataDialog':
         """Sets the project's website.  This is displayed in the "website" row."""
         self._ui.website.setText(f'<a href="{website}">{website}</a>')
         
         return self
-    
-    def setProjectDocs(self, docs: str) -> 'MetadataDialog':
+
+    def set_project_docs(self, docs: str) -> 'MetadataDialog':
         """Sets the project's documentation website.  This is displayed
         in the "docs" row."""
         self._ui.docs.setText(f'<a href="{docs}">{docs}</a>')
@@ -107,7 +107,6 @@ class MetadataDialog(QtWidgets.QDialog):
         self.close()
     
     def showEvent(self, a0: QtGui.QShowEvent):
-        self.adjustSize()
         a0.accept()
     
     def closeEvent(self, a0: QtGui.QCloseEvent):

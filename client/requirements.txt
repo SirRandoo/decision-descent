@@ -1,5 +1,4 @@
 configobj
-markdown
 PyQt5
 
 git+https://github.com/sirrandoo/qtutilities#egg=QtUtilities

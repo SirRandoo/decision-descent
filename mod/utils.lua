@@ -35,7 +35,6 @@ local function splitIntent(intent)
 		table.insert(segments, segment) 
 	end
 
-	Isaac.DebugString(tostring(#segments))
 	return segments
 end
 

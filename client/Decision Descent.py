@@ -28,6 +28,8 @@ from PyQt5 import QtCore
 
 from widgets import Client, QApplication
 
+# TODO: The Void level's boss rooms spawn polls.. to fix or not to fix?
+
 possible_unload_methods = ["quit", "shutdown", "unload"]
 
 if __name__ == '__main__':
@@ -39,4 +41,4 @@ if __name__ == '__main__':
     logger = logging.getLogger("client.app")
     
     logger.info("Looks like we're really doing this...")
-    ClientApplication.exec()
+    ClientApplication.exec_()

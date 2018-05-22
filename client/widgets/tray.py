@@ -39,15 +39,15 @@ class TrayIcon(QtWidgets.QWidget):
         super(TrayIcon, self).__init__(parent=parent)
         
         #  External Attributes  #
-        self.tray = QtWidgets.QSystemTrayIcon(parent=self)
+        self.tray_icon = QtWidgets.QSystemTrayIcon(parent=self)
         self.menu = QtWidgets.QMenu(parent=self)
         
         #  Internal Calls  #
-        self.tray.setContextMenu(self.menu)
-        self.tray.activated.connect(self.on_activation)
+        self.tray_icon.setContextMenu(self.menu)
+        self.tray_icon.activated.connect(self.on_activation)
     
     def show(self):
-        self.tray.show()
+        self.tray_icon.show()
         super(TrayIcon, self).show()
     
     def show_message(self, title: str, message: str, icon=None):
@@ -61,9 +61,9 @@ class TrayIcon(QtWidgets.QWidget):
                     and icon != QtWidgets.QSystemTrayIcon.Critical \
                     and not isinstance(icon, QtGui.QIcon):
                 icon = QtWidgets.QSystemTrayIcon.Information
-        
-        if self.tray.supportsMessages():
-            self.tray.showMessage(title, message, icon)
+
+        if self.tray_icon.supportsMessages():
+            self.tray_icon.showMessage(title, message, icon)
     
     def on_activation(self, reason):
         if reason == QtWidgets.QSystemTrayIcon.Context:
@@ -82,7 +82,7 @@ class TrayIcon(QtWidgets.QWidget):
         logging.info("Performing shutdown operations...")
         
         logging.info("Calling deleteLater on tray icon...")
-        self.tray.deleteLater()
+        self.tray_icon.deleteLater()
         logging.info("Called!")
         
         logging.info("Calling deleteLater on context menu...")

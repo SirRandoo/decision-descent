@@ -21,16 +21,18 @@
 #
 # Author: RandomShovel
 # File Creation Date: 7/18/2017
-# TODO: Clean up attributes
 import inspect
 import logging
 import os
+import platform
+import traceback
+import typing
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import utils
 from utils import dataclasses
-from . import http, info, metadata, tray
+from . import http, info, metadata, settings, tray
 from .uis import ClientUi
 
 __all__ = {"Client"}
@@ -38,6 +40,10 @@ __all__ = {"Client"}
 
 class Client(QtWidgets.QMainWindow):
     """The heart of Decision Descent: Client."""
+    LICENSE = "GNU General Public License 3 or later"
+    NAME = "Decision Descent: Client"
+    AUTHORS = ["SirRandoo"]
+    VERSION = (0, 2, 0)
     
     def __init__(self, parent: QtWidgets.QWidget = None):
         # Super Call #
@@ -48,46 +54,47 @@ class Client(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         
         # "Public" Attributes #
-        self.config = dict(settings=utils.Config("settings.ini"), descent=utils.Config("descent.ini"))
-        self.handlers = [logging.FileHandler("log.txt", encoding="UTF-8", mode="w"),
-                         utils.Log(self.ui.log)]
-        self.formatter = logging.Formatter(fmt="[{asctime}]"
-                                               "[{levelname}]"
-                                               "[{name}]"
-                                               "[{funcName}] {message}",
+        self.configs = dict(settings=utils.Config("settings.ini", configspec=".meta/settings.ini"),
+                            descent=utils.Config("descent.ini", configspec=".meta/descent.ini"))
+        self.handlers = [logging.FileHandler("log.txt", encoding="UTF-8", mode="w"), utils.Log(self.ui.client_log)]
+        self.formatter = logging.Formatter(fmt="[{asctime}][{levelname}][{name}][{funcName}] {message}",
                                            datefmt="%H:%M:%S",
                                            style="{")
         self.logger = self.setup_logger("client")  # type: logging.Logger
         self.integrations = list()
         
-        self.metadata = metadata.MetadataDialog(name="Decision Descent: Client",
-                                                version="0.1.0",
-                                                license="GPLv3+",
-                                                license_url="https://github.com/SirRandoo/"
-                                                            "decision-descent/blob/master/LICENSE",
-                                                website="https://github.com/SirRandoo/decision-descent",
-                                                docs="https://sirrandoo.github.io/decision-descent",
-                                                authors=["SirRandoo"])
         self.display = info.Info(parent=self)
         self.tray = tray.TrayIcon(parent=self)
-        self.show_action = QtWidgets.QAction("Show", parent=self.tray.menu)
         self.http = http.HttpListener(parent=self)
-        self.data = utils.DescentData(self.http, self.config, parent=self)
+        self.settings = settings.Settings(parent=self)
+        self.metadata = metadata.MetadataDialog(parent=self)
+        self.data = utils.DescentData(self.http, self.configs, parent=self)
+        self.show_action = QtWidgets.QAction("Show", parent=self.tray.menu)
+        self.isaac_timer = QtCore.QTimer(parent=self)
+        self.isaac_log = self.find_isaac_log()
+        self.isaac_size = 0
         
         # "Private" Attributes #
         self._shutting_down = False
         
         # Internal Calls #
         self.setup_logger("QtTwitch")
+        self.ui.menu_bar.raise_()  # Fixes the menubar not showing actions
         self.tray.show()
         
         self.bind()
         self.mirror_menubar()
+        self.setup_metadata()
         self.load_integrations()
         self.http.connect()
         
         self.setWindowIcon(QtGui.QIcon('assets/icon.png'))
-        self.tray.tray.setIcon(self.windowIcon())
+        self.tray.tray_icon.setIcon(self.windowIcon())
+
+        if self.isaac_log is not None:
+            if not self.isaac_log.isOpen():
+                self.isaac_log.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
+                self.isaac_timer.start(500)
     
     # Integration Methods #
     def load_integrations(self, path: str = None):
@@ -96,27 +103,28 @@ class Client(QtWidgets.QMainWindow):
         failed = 0
         
         if path is None:
-            path = self.config["settings"]["locations"]["integrations"]
+            path = self.configs["settings"]["locations"]["integrations"]
             
             if not path:
                 path = "integrations"
         
         self.logger.info(f"Loading integrations from {path}...")
         for item in os.listdir(path):
-            item_path = os.path.normpath(os.path.join(path, item))
-            item_path = ".".join(item_path.split(os.sep))
-            integration = dataclasses.Integration(item_path)
-            
-            try:
-                integration.load(self)
-
-            except utils.errors.MethodMissingError as e:
-                self.logger.warning(f'Integration "{item_path}" could not be loaded!')
-                self.logger.warning(str(e))
-                failed += 1
-            
-            else:
-                self.integrations.append(integration)
+            if not item.startswith("_") and not item.startswith("."):
+                item_path = os.path.normpath(os.path.join(path, item))
+                item_path = ".".join(item_path.split(os.sep))
+                integration = dataclasses.Integration(item_path)
+        
+                try:
+                    integration.load(self)
+        
+                except utils.errors.MethodMissingError as e:
+                    self.logger.warning(f'Integration "{item_path}" could not be loaded!')
+                    self.logger.warning(str(e))
+                    failed += 1
+        
+                else:
+                    self.integrations.append(integration)
         
         self.logger.info("Successfully loaded {} integrations!".format(len(self.integrations)))
         
@@ -156,6 +164,10 @@ class Client(QtWidgets.QMainWindow):
     def bind_menubar(self):
         """Binds all menubar objects to their respective slots."""
         self.logger.info("Binding menubar actions to their respective slots...")
+
+        self.logger.info("Binding menubar action...")
+        self.ui.menu_bar.triggered.connect(self.force_menu)
+        self.logger.info("Bound!")
         
         self.logger.info("Binding quit action...")
         self.ui.menu_quit.triggered.connect(lambda: QtWidgets.qApp.exit(0))
@@ -203,14 +215,29 @@ class Client(QtWidgets.QMainWindow):
     def bind_http(self):
         """Binds all http signals to their respective slots."""
         self.logger.info("Binding HTTP signals to their respective slots...")
-        
-        self.logger.info("Bound on_response signal...")
+
+        self.logger.info("Binding on_response signal...")
         self.http.on_response.connect(self.data.process_message)
+        self.logger.info("Bound!")
+
+        self.logger.info("Binding on_connection_received signal...")
+        self.http.on_connection_received.connect(self.data.process_new_connection)
         self.logger.info("Bound!")
         
         self.logger.info("Bound all HTTP signals to their respective slots!")
+
+    def bind_attributes(self):
+        """Binds all attribute signals to their respective slots."""
+        self.logger.info("Binding attribute signals to their respective slots...")
     
-    # Help Methods #
+        if self.isaac_log is not None:
+            self.logger.info("Binding timeout signal...")
+            self.isaac_timer.timeout.connect(self.process_log_changes)
+            self.logger.info("Bound!")
+    
+        self.logger.info("Bound all attribute signals to their respective slots!")
+
+    # Menu Methods #
     def help(self):
         """Displays the Decision Descent: Wiki"""
         self.logger.info("Opening Decision Descent's documentation...")
@@ -253,7 +280,10 @@ class Client(QtWidgets.QMainWindow):
         self.logger.warning("This does not shutdown Decision Descent: Mod!")
         
         self._shutting_down = True
-        super(Client, self).close()
+        self.close()
+
+    def force_menu(self, action: QtWidgets.QAction):
+        """Forces the menubar's menu to be shown."""
     
     # Utility Methods #
     def setup_logger(self, name: str) -> logging.Logger:
@@ -276,8 +306,8 @@ class Client(QtWidgets.QMainWindow):
         
         if can_log:
             self.logger.info(f'Setting logger level to client\'s level...')
-        
-        logger.setLevel(logging.DEBUG if self.config["settings"]["debug"]["enabled"] else logging.INFO)
+
+        logger.setLevel(logging.DEBUG if self.configs["settings"]["debug"]["enabled"] else logging.INFO)
         
         return logger
     
@@ -298,6 +328,49 @@ class Client(QtWidgets.QMainWindow):
             self.tray.menu.addAction(action)
         
         self.logger.info("Mirror complete!")
+
+    def setup_metadata(self):
+        """Populates the metadata dialog."""
+        self.metadata.set_project_name(self.NAME)
+        self.metadata.set_project_version(".".join([str(i) for i in self.VERSION]))
+        self.metadata.set_project_authors(*self.AUTHORS)
+        self.metadata.set_project_website("https://github.com/sirrandoo/decision-descent")
+        self.metadata.set_project_docs("https://sirrandoo.github.io/decision-descent")
+        self.metadata.set_project_license(self.LICENSE,
+                                          "https://github.com/sirrandoo/decision-descent/blob/master/LICENSE")
+
+    def find_isaac_log(self) -> typing.Union[QtCore.QFile, None]:
+        """Attempts to find Isaac's log file."""
+        if platform.system() == "Windows":
+            user_directory = os.getenv("USERPROFILE")
+            isaac_directory = os.path.join(user_directory, "Documents\\My Games\\Binding of Isaac Afterbirth+")
+        
+            return QtCore.QFile(os.path.join(isaac_directory, "log.txt"), self)
+    
+        else:
+            return None
+
+    # Slots #
+    def process_log_changes(self):
+        """Processes changes to the Isaac log file."""
+        if self.isaac_log is not None:
+            if self.isaac_log.isReadable():
+                if self.isaac_size > self.isaac_log.size():  # Let's assume the log was overwritten
+                    self.isaac_size = self.isaac_log.size()
+                    self.ui.isaac_log.clear()
+                    self.isaac_log.seek(0)
+            
+                while not self.isaac_log.atEnd():
+                    data = self.isaac_log.readLine()
+                
+                    if not data.isEmpty():
+                        data = utils.format_isaac(data.data().decode())
+                    
+                        if data is not None:
+                            self.ui.isaac_log.append(data)
+                    QtWidgets.qApp.processEvents()
+            
+                self.isaac_size = self.isaac_log.size()
     
     # Qt Events #
     def closeEvent(self, a0: QtGui.QCloseEvent):
@@ -313,7 +386,7 @@ class Client(QtWidgets.QMainWindow):
             self.logger.warning("Performing closing operations...")
             
             self.logger.info("Saving configs...")
-            for key, value in self.config.items():
+            for key, value in self.configs.items():
                 self.logger.info(f'Saving config "{key}"...')
                 value.write()
                 self.logger.info("Saved!")

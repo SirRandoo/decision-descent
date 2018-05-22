@@ -24,5 +24,5 @@
 from . import errors, dataclasses
 from .modules import remove_module_and_imports, remove_module_and_submodules
 from .config import Config
-from .log import Log, DescentFormatter
+from .log import Log, DescentFormatter, format_isaac
 from .data import DescentData

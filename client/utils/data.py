@@ -57,10 +57,11 @@ class DescentData(QtCore.QObject):
         
         self._intents = {
             "polls": {
-                "create": self.register_started_poll,
+                "create": self.polls_create,
                 "multi": {
-                    "create": self.register_started_multi_poll
-                }
+                    "create": self.polls_multi_create
+                },
+                "delete": self.unregister_poll
             }
         }
     
@@ -133,6 +134,40 @@ class DescentData(QtCore.QObject):
         
         else:
             raise IndexError
+
+    #
+    def polls_create(self, intent: str, *choices: str, **aliases):
+        """The callable for intent "polls.create"."""
+        tmp_ipoll = self.register_poll(intent, *choices, **aliases)
+        tmp_ipoll.start(self._config["descent"]["core"].as_int("duration"))
+        self.on_poll_created.emit(tmp_ipoll)
+
+    def polls_multi_create(self, intent: str, *choices: str, **aliases):
+        """The callable for intent "polls.multi.create"."""
+        tmp_impoll = self.register_multi_poll(intent, *choices, **aliases)
+        tmp_impoll.start(self._config["descent"]["core"].as_int("duration"))
+        self.on_poll_created.emit(tmp_impoll)
+
+    def polls_delete(self, identifier_or_alias: str):
+        """The callable for intent "polls.delete"."""
+        if identifier_or_alias.lower() == "all":
+            self.logger.warning("Deleting all polls...")
+        
+            for poll in self._polls.copy():
+                poll.instance.stop()
+                poll.instance.deleteLater()
+        
+            self._polls.clear()
+    
+        else:
+            self.logger.warning(f'Deleting poll with choice "{identifier_or_alias}"...')
+        
+            for index, poll in enumerate(self._polls.copy()):
+                if poll.instance.is_choice(identifier_or_alias):
+                    poll.instance.stop()
+                    poll.instance.deleteLater()
+                    del self._polls[index]
+                    break
     
     # Poll Methods #
     def register_poll(self, intent: str, *choices: str, **aliases) -> dataclasses.Poll:
@@ -160,18 +195,6 @@ class DescentData(QtCore.QObject):
         tmp_rmpoll.multiple_choice = True
         
         return tmp_rmpoll
-    
-    def register_started_poll(self, intent: str, *choices: str, **aliases):
-        """A shortcut for `register_poll` and starting the resulting poll."""
-        tmp_ipoll = self.register_poll(intent, *choices, **aliases)
-        tmp_ipoll.start(self._config["descent"]["core"].as_int("duration"))
-        self.on_poll_created.emit(tmp_ipoll)
-    
-    def register_started_multi_poll(self, intent: str, *choices: str, **aliases):
-        """A shortcut for `register_multi_poll` and starting the resulting poll."""
-        tmp_impoll = self.register_multi_poll(intent, *choices, **aliases)
-        tmp_impoll.start(self._config["descent"]["core"].as_int("duration"))
-        self.on_poll_created.emit(tmp_impoll)
     
     def unregister_poll(self, instance: dataclasses.Poll):
         """Unregisters a poll from the internal poll cache."""
@@ -210,6 +233,28 @@ class DescentData(QtCore.QObject):
                 
                 elif response is not None:
                     self._http.send_message(dataclasses.Message(message.reply, [response], dict()))
+
+    def process_new_connection(self):
+        """Invoked when the HTTP listener receives a new connection."""
+        self.logger.info("Sending config to Isaac...")
+        conf_alias = self._config["descent"]
+    
+        self._http.send_message(dataclasses.Message.from_json({
+            "intent": "state.config.update",
+            "args": [{
+                "core": {"maximum_choices": conf_alias["core"].as_int("maximum_choices")},
+                "hud": {
+                    "enabled": conf_alias["hud"].as_bool("hud_enabled"),
+                    "text_color": conf_alias["hud"]["text_color"],
+                    "alpha": conf_alias["hud"].as_float("transparency"),
+                    "width": conf_alias["hud"].as_float("width"),
+                    "height": conf_alias["hud"].as_float("height"),
+                    "x": conf_alias["hud"].as_float("x"),
+                    "y": conf_alias["hud"].as_float("y")
+                },
+                "debug": {"enabled": conf_alias["debug"].as_bool("enabled")}
+            }]
+        }))
     
     def process_poll(self, poll_id: str):
         """Processes signals from polls."""

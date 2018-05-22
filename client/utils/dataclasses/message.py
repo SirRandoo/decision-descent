@@ -103,7 +103,7 @@ class Message:
     @classmethod
     def from_json(cls, message: dict) -> 'Message':
         """Converts a raw decoded message to a Message object."""
-        kwargs = message.pop("kwargs")
+        kwargs = message.pop("kwargs", dict())
         
         if not isinstance(kwargs, dict):
             kwargs = dict()

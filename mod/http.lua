@@ -97,8 +97,8 @@ function psuedoWs:dispatch(rawMessage)
             end
         end
 
-        self.logger:info(string.format("Invoking intent \"%s\" with arguments \"%s\"", decodedMessage.intent, table.concat(decodedMessage.args, ", ")))
-        succeeded, response = pcall(cursor, table.unpack(decodedMessage.args))
+        pcall(function() self.logger:info(string.format("Invoking intent \"%s\" with arguments \"%s\"", decodedMessage.intent, table.concat(decodedMessage.args, ", "))) end)
+        local succeeded, response = pcall(cursor, table.unpack(decodedMessage.args))
 
         if succeeded then
             self.logger:info("Intent invoked without any errors!")

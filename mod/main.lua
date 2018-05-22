@@ -22,11 +22,18 @@
 -------------------------------------------------
 
 --[[  Mini Config  ]]--
-local config = { http = { host = "127.0.0.1", port = 25565 } }
+local config = {
+	http = { host = "127.0.0.1", port = 25565 },
+
+	rooms = {
+		[tostring(RoomType.ROOM_ERROR)] = { minimum = 7, maximum = 28, devil = 3 },
+		[tostring(RoomType.ROOM_CURSE)] = { minimum = 2, maximum = 25 }
+	}
+}
 
 
 --[[  Initial Declarations  ]]--
-local name, version, apiVersion = "Decision Descent", "0.1.0", 1.0
+local name, version, apiVersion = "Decision Descent", "0.2.0", 1.0
 local DecisionDescent = RegisterMod(name, apiVersion)
 local fLogger = {  -- Fallback logger
 	info = function(message) Isaac.DebugString(string.format("[Decision Descent][INFO] %s", message)) end,
@@ -120,9 +127,13 @@ DecisionDescent.http.intents.state = {
 	config = {
 		update = function(modConf)
 			local httpConfig = config.http
+			local roomConfig = config.rooms
 
 			config = modConf
 			config.http = httpConfig
+			config.rooms = roomConfig
+
+			DDLog:info("Config updated!")
 		end
 	}
 }
@@ -136,14 +147,15 @@ if not succeeded then
 	DDLog:critical("The Lua half of Decision Descent is merely the client's puppet, and cannot function on its own!")
 	DDLog:critical(string.format("Error message: %s", response))
 else
-	DDLog:critical("Successfully connected to the client!")
+	DDLog:info("Successfully connected to the client!")
 end
 
 
---[[  Generator Declaration  ]]--
-
+--[[  Utility Functions  ]]--
 local function generatePoll()
-	local maximumChoices = 2
+	DDLog:info("Generating poll...")
+
+	local maximumChoices = 3
 	local game = Game()
 	local room = game:GetRoom()
 	local roomType = room:GetType()
@@ -154,7 +166,7 @@ local function generatePoll()
 
 	if config.core then
 		if config.core.maximum_choices < 0 then
-			maximumChoices = 10000
+			maximumChoices = 10  -- Reduced for obvious reasons
 		elseif config.core.maximum_choices == 0 then
 			maximumChoices = 0
 		else
@@ -162,71 +174,118 @@ local function generatePoll()
 		end
 	end
 
-	if roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE 
-		or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_SUPERSECRET 
-		or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL 
-		or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BOSSRUSH 
-		or roomType == RoomType.ROOM_BLACK_MARKET then
+	local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
+	local roomSpecs = config.rooms[tostring(roomType)]
 
-		local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
+	if roomSpecs ~= nil then
+		local shouldGenerate = math.random(roomSpecs.maximum) <= roomSpecs.minimum
 
-		while #choices < maximumChoices do
-			local choice = itemPool:GetCollectible(roomPool, false, roomSeed)
+		if not shouldGenerate then
+			return
+		end
+	end
 
-			if choice ~= nil then
-				local item = itemConfig:GetCollectible(choice)
-				local duplicate = false
+	while #choices < maximumChoices do
+		local choice = itemPool:GetCollectible(roomPool, false, roomSeed)
 
-				for a=1, #choices do
-					if choices[a] == choice then duplicate = true end
-				end
+		if choice ~= nil then
+			local item = itemConfig:GetCollectible(choice)
+			local duplicate = false
 
-				if not duplicate then table.insert(choices, {item.ID, item.Name}) end
+			for a=1, #choices do
+				if choices[a] == choice then duplicate = true end
+			end
+
+			if not duplicate then table.insert(choices, {item.ID, item.Name}) end
+		else
+			break
+		end
+	end
+
+	if #choices > 1 then
+		directChoices = {}
+		aliases = {}
+
+		for _, itemArray in pairs(choices) do
+			directChoice = tostring(itemArray[1])
+			table.insert(directChoices, directChoice)
+			
+			if aliases[directChoice] ~= nil then
+				table.insert(aliases[directChoice], itemArray[2])
 			else
-				break
+				aliases[directChoice] = {itemArray[2]}
 			end
 		end
 
-		if #choices > 1 then
-			directChoices = {}
-			aliases = {}
-
-			for _, itemArray in pairs(choices) do
-				directChoice = tostring(itemArray[1])
-				table.insert(directChoices, directChoice)
-				
-				if aliases[directChoice] ~= nil then
-					table.insert(aliases[directChoice], itemArray[2])
-				else
-					aliases[directChoice] = {itemArray[2]}
-				end
-			end
-
+		if roomSpecs == nil then
 			if roomType ~= RoomType.ROOM_DEVIL then
 				DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
 			elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
 				DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
 			end
 		else
-			DDLog:info("Insufficient choices!")
+			if roomSpecs.devil ~= nil then
+				local isDevilPoll = math.random(roomSpecs.maximum) <= roomSpecs.devil
+
+				if roomType ~= RoomType.ROOM_DEVIL then
+					if not isDevilPoll then
+						DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
+					else
+						DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+					end
+				elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+					DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+				end
+			else
+				if roomType ~= RoomType.ROOM_DEVIL then
+					DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
+				elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+					DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+				end
+			end
 		end
+	else
+		DDLog:info("Insufficient choices!")
 	end
 end
 
 
 --[[  Callbacks  ]]--
-function DecisionDescent.POST_GAME_STARTED(isSave) if not isSave then DecisionDescent.http:sendMessage("polls.delete.all") end end
+function DecisionDescent.POST_GAME_STARTED(isSave) if not isSave then DecisionDescent.http:sendMessage("polls.delete", {"all"}) end end
 function DecisionDescent.PRE_GAME_EXIT(shouldSave) if shouldSave then DecisionDescent.http:sendMessage("client.close") end end
 function DecisionDescent.POST_NEW_LEVEL() DecisionDescent.http:sendMessage("client.state.level.changed") end
+function DecisionDescent.POST_GET_COLLECTIBLE(collectible, poolType, decrease, seed)
+	local game = Game()
+	local currentRoom = game:GetRoom()
+	local roomType = currentRoom:GetType()
+
+	if roomType == RoomType.ROOM_BOSS then
+		local entities = Isaac.GetRoomEntities()
+		DDLog:info("Attempting to remove collectible...")
+
+		for a=1, #entities do
+			local entity = entities[a]
+
+			if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_COLLECTIBLE and entity.SubType == collectible then
+				entity:Remove()
+				DDLog:info("Collectible removed!")
+				break
+			end
+		end
+	end
+end
 function DecisionDescent.POST_RENDER()
 	local game = Game()
-	local room = game:GetRoom()
-	local topLeft = room:WorldToScreenPosition(room:GetTopLeftPos())
-	local bottomRight = room:WorldToScreenPosition(room:GetBottomRightPos())
-	local renderPos = Vector(bottomRight.X, topLeft.Y)
+	local renderPos = Vector(20.0, 40.0)
 	local renderText = string.format("Decision Descent v%s", version)
 
-	Isaac.RenderText(renderText, math.abs(renderPos.X - math.ceil(Isaac.GetTextWidth(renderText) / 2)), renderPos.Y, 1.0, 1.0, 1.0, 0.8)
+	if config.hud ~= nil then
+		if config.hud.enabled then
+			Isaac.RenderScaledText(renderText, math.abs(config.hud.x - math.ceil(Isaac.GetTextWidth(renderText) / 2)), config.hud.y, config.hud.width, config.hud.height, 1.0, 1.0, 1.0, config.hud.alpha)
+		end
+	else
+		Isaac.RenderScaledText(renderText, math.abs(renderPos.X - math.ceil(Isaac.GetTextWidth(renderText) / 2)), renderPos.Y, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
+	end
 end
 function DecisionDescent.POST_UPDATE()
 	if Isaac.GetFrameCount() % 30 == 0 then
@@ -243,45 +302,38 @@ function DecisionDescent.POST_UPDATE()
 end
 function DecisionDescent.POST_NEW_ROOM()
 	DecisionDescent.http:sendMessage("client.state.room.changed")
-	local maximumChoices = 2
-	local game = Game()
 
-	if config.core then
-		if config.core.maximum_choices < 0 then
-			maximumChoices = 10000
-		elseif config.core.maximum_choices == 0 then
-			maximumChoices = 0
-		else
-			maximumChoices = config.core.maximum_choices
-		end
-	end
+	local game = Game()
+	local currentRoom = game:GetRoom()
+	local currentLevel = game:GetLevel()
+	local roomType = currentRoom:GetType()
+	local levelType = currentLevel:GetStage()
 
 	--[[  Room Checks  ]]--
-	local currentRoom = game:GetRoom()
-	local roomType = currentRoom:GetType()
-	local roomSeed = currentRoom:GetAwardSeed()
-	local itemConfig = Isaac.GetItemConfig()
-	local itemPool = game:GetItemPool()
-	local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
+	local isSupportedRoom = roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BLACK_MARKET
 
-	DDLog:info(string.format("ROOM_ERROR %s", roomType == RoomType.ROOM_ERROR))
-	DDLog:info(string.format("ROOM_TREASURE %s", roomType == RoomType.ROOM_TREASURE))
-	DDLog:info(string.format("ROOM_BOSS %s", roomType == RoomType.ROOM_BOSS))
-	DDLog:info(string.format("ROOM_SUPERSECRET %s", roomType == RoomType.ROOM_SUPERSECRET))
-	DDLog:info(string.format("ROOM_CURSE %s", roomType == RoomType.ROOM_CURSE))
-	DDLog:info(string.format("ROOM_DEVIL %s", roomType == RoomType.ROOM_DEVIL))
-	DDLog:info(string.format("ROOM_ANGEL %s", roomType == RoomType.ROOM_ANGEL))
-	DDLog:info(string.format("ROOM_BOSSRUSH %s", roomType == RoomType.ROOM_BOSSRUSH))
-	DDLog:info(string.format("ROOM_BLACK_MARKET %s", roomType == RoomType.ROOM_BLACK_MARKET))
-
-	if roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE 
-		or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_SUPERSECRET 
-		or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL 
-		or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BOSSRUSH 
-		or roomType == RoomType.ROOM_BLACK_MARKET then
+	if currentRoom:IsFirstVisit() and levelType ~= LevelStage.STAGE5 and levelType ~= LevelStage.STAGE6 then
 		local generator = coroutine.create(generatePoll)
 
-      	coroutine.resume(generator)
+		if levelType == LevelStage.STAGE7 then  -- The Void checks
+			if isSupportedRoom and currentRoom:GetDeliriumDistance() > 0 then
+				coroutine.resume(generator)
+			end
+		elseif levelType == LevelStage.STAGE3_2 or (levelType == LevelStage.STAGE3_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore the Mom boss room
+				coroutine.resume(generator)
+			end
+		elseif levelType == LevelStage.STAGE4_2 or (levelType == LevelStage.STAGE4_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore the It Lives! / Mom's Heart boss room
+				coroutine.resume(generator)
+			end
+		elseif levelType == LevelStage.STAGE4_3 then
+			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore Hushy's room
+				coroutine.resume(generator)
+			end
+		elseif isSupportedRoom then
+			coroutine.resume(generator)
+		end
 	end
 end
 
@@ -310,6 +362,9 @@ DecisionDescent:AddCallback(ModCallbacks.MC_POST_RENDER, DecisionDescent.POST_RE
 
 DDLog:info("Registering MC_POST_UPDATE callback...")
 DecisionDescent:AddCallback(ModCallbacks.MC_POST_UPDATE, DecisionDescent.POST_UPDATE)
+
+DDLog:info("Registering MC_POST_GET_COLLECTIBLE...")
+DecisionDescent:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, DecisionDescent.POST_GET_COLLECTIBLE)
 
 DDLog:info("Callbacks registered!")
 DDLog:info(string.format("Decision Descent v%s loaded!", version))

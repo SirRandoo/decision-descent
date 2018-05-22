@@ -27,18 +27,22 @@ local function spawnOrGive(collectible)
 	if type(collectible) == "string" then collectible = Isaac.GetItemIdByName(collectible) end
 	local itemConfig = Isaac.GetItemConfig()
 	local player = Isaac.GetPlayer(0)
+	local game = Game()
+	local itemPool = game:GetItemPool()
 
 	if collectible > 0 then
 		local collectibleData = itemConfig:GetCollectible(collectible)
 
 		if collectibleData.Type == ItemType.ITEM_ACTIVE then
-			local room = Game():GetRoom()
+			local room = game:GetRoom()
 			local spawnLocation = room:FindFreePickupSpawnPosition(player.Position, 1, true)
 
-			Game():Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, spawnLocation, Vector(0, 0), player, collectible, room:GetAwardSeed())
+			game:Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, spawnLocation, Vector(0, 0), player, collectible, room:GetAwardSeed())
 		elseif player:CanAddCollectible() then
 			player:AddCollectible(collectible, 0)
 		end
+
+		itemPool:RemoveCollectible(collectible)
 	end
 end
 
@@ -128,14 +132,15 @@ return {
 				local player = Isaac.GetPlayer(0)
 				local itemConfig = Isaac.GetItemConfig()
 				local item = itemConfig:GetCollectible(collectible)
+				local price = item.DevilPrice * 2
 				if player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN then player = player:GetSubPlayer() end
 
 				if player:GetPlayerType() ~= PlayerType.PLAYER_THELOST then
-					if player:GetMaxHearts() > 0 then
-						player:AddMaxHearts(-item.DevilPrice)
+					if player:GetMaxHearts() > price or (player:GetSoulHearts() > 0 and player:GetMaxHearts() > 0)then
+						player:AddMaxHearts(-price)
 						spawnOrGive(collectible)
-					elseif player:GetSoulHearts() > 0 then
-						player:AddSoulHearts(-3 * 2)
+					elseif player:GetSoulHearts() > 6 then
+						player:AddSoulHearts(-6)
 						spawnOrGive(collectible)
 					end
 				else

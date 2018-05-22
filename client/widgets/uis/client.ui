@@ -13,13 +13,166 @@
         <property name="windowTitle">
             <string>Decision Descent - Client</string>
         </property>
+        <property name="windowIcon">
+            <iconset>
+                <normaloff>../../assets/icon.png</normaloff>../../assets/icon.png
+            </iconset>
+        </property>
+        <property name="documentMode">
+            <bool>true</bool>
+        </property>
         <widget class="QWidget" name="app_central">
-            <layout class="QGridLayout" name="gridLayout">
+            <layout class="QGridLayout" name="app_layout">
+                <property name="leftMargin">
+                    <number>0</number>
+                </property>
+                <property name="topMargin">
+                    <number>0</number>
+                </property>
+                <property name="rightMargin">
+                    <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                    <number>0</number>
+                </property>
                 <item row="0" column="0">
-                    <widget class="QTextBrowser" name="log">
-                        <property name="lineWrapMode">
-                            <enum>QTextEdit::NoWrap</enum>
+                    <widget class="QTabWidget" name="log_tabs">
+                        <property name="tabPosition">
+                            <enum>QTabWidget::West</enum>
                         </property>
+                        <property name="currentIndex">
+                            <number>0</number>
+                        </property>
+                        <widget class="QWidget" name="client_log_tab">
+                            <attribute name="title">
+                                <string>Client</string>
+                            </attribute>
+                            <layout class="QGridLayout" name="client_log_layout">
+                                <item row="1" column="0" colspan="2">
+                                    <widget class="QTextBrowser" name="client_log"/>
+                                </item>
+                                <item row="0" column="1">
+                                    <widget class="QComboBox" name="client_filter">
+                                        <property name="insertPolicy">
+                                            <enum>QComboBox::InsertAlphabetically</enum>
+                                        </property>
+                                        <property name="sizeAdjustPolicy">
+                                            <enum>QComboBox::AdjustToContents</enum>
+                                        </property>
+                                        <item>
+                                            <property name="text">
+                                                <string>Critical</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Error</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Warning</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Info</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Debug</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>All</string>
+                                            </property>
+                                        </item>
+                                    </widget>
+                                </item>
+                                <item row="0" column="0">
+                                    <widget class="QLabel" name="client_filter_label">
+                                        <property name="text">
+                                            <string>Filter Level</string>
+                                        </property>
+                                        <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                                        </property>
+                                        <property name="wordWrap">
+                                            <bool>true</bool>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </widget>
+                        <widget class="QWidget" name="isaac_log_tab">
+                            <attribute name="title">
+                                <string>Isaac</string>
+                            </attribute>
+                            <layout class="QGridLayout" name="isaac_log_layout">
+                                <item row="0" column="0">
+                                    <widget class="QLabel" name="isaac_filter_label">
+                                        <property name="text">
+                                            <string>Filter Level</string>
+                                        </property>
+                                        <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                                        </property>
+                                        <property name="wordWrap">
+                                            <bool>true</bool>
+                                        </property>
+                                    </widget>
+                                </item>
+                                <item row="0" column="1">
+                                    <widget class="QComboBox" name="isaac_filter">
+                                        <item>
+                                            <property name="text">
+                                                <string>Critical</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Error</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Warning</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Info</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>Debug</string>
+                                            </property>
+                                        </item>
+                                        <item>
+                                            <property name="text">
+                                                <string>All</string>
+                                            </property>
+                                        </item>
+                                    </widget>
+                                </item>
+                                <item row="2" column="0" colspan="2">
+                                    <widget class="QTextBrowser" name="isaac_log"/>
+                                </item>
+                                <item row="1" column="1">
+                                    <widget class="QCheckBox" name="isaac_filter_modifier">
+                                        <property name="text">
+                                            <string>Only Decision Descent output?</string>
+                                        </property>
+                                        <property name="checked">
+                                            <bool>true</bool>
+                                        </property>
+                                    </widget>
+                                </item>
+                            </layout>
+                        </widget>
                     </widget>
                 </item>
             </layout>
@@ -37,12 +190,9 @@
                 <property name="title">
                     <string>Menu</string>
                 </property>
+                <addaction name="menu_settings"/>
+                <addaction name="separator"/>
                 <addaction name="menu_quit"/>
-            </widget>
-            <widget class="QMenu" name="menu_settings">
-                <property name="title">
-                    <string>Settings</string>
-                </property>
             </widget>
             <widget class="QMenu" name="menu_help">
                 <property name="title">
@@ -54,7 +204,6 @@
                 <addaction name="help_license"/>
             </widget>
             <addaction name="menu_menu"/>
-            <addaction name="menu_settings"/>
             <addaction name="menu_help"/>
         </widget>
         <action name="menu_quit">
@@ -87,6 +236,11 @@
             </property>
             <property name="shortcut">
                 <string/>
+            </property>
+        </action>
+        <action name="menu_settings">
+            <property name="text">
+                <string>Settings...</string>
             </property>
         </action>
     </widget>
