@@ -29,7 +29,7 @@ local utils = require("utils")
 
 
 --[[  Classes  ]]--
-psuedoWs = {}
+local psuedoWs = {}
 psuedoWs.__index = psuedoWs
 
 
@@ -51,7 +51,7 @@ function psuedoWs:sendMessage(intent, arguments, kwargs, reply)
     if type(intent) ~= "string" then error("Intent must be a string!") end
     if type(arguments) ~= "table" then error("Arguments must be a table of neutral arguments!") end
 
-    succeeded, message = self.socket:send(json.encode({sender = 1, intent = intent, args = arguments, kwargs = kwargs, reply = reply}) .. "\r\n")
+    local succeeded, message = self.socket:send(json.encode({ sender = 1, intent = intent, args = arguments, kwargs = kwargs, reply = reply }) .. "\r\n")
 
     if succeeded == nil then
         self.logger:warning("Could not send message to client!")
@@ -151,6 +151,10 @@ function psuedoWs:connect(host, port)
                                         if succeeded ~= nil then
                                             self.logger:info(succeeded)
                                             self:dispatch(succeeded)
+                                        elseif response == "closed" then
+                                            self.logger:warning("Disconnected from client!")
+                                            self.logger:info("Reconnecting...")
+                                            self:connect()
                                         elseif response ~= "timeout" then
                                             self.logger:warning("Could not read message from client!")
                                             self.logger:warning(string.format("Error message: %s", response))

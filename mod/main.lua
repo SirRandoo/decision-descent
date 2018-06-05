@@ -23,25 +23,36 @@
 
 --[[  Mini Config  ]]--
 local config = {
-	http = { host = "127.0.0.1", port = 25565 },
+    http = { host = "127.0.0.1", port = 25565 },
 
-	rooms = {
-		[tostring(RoomType.ROOM_ERROR)] = { minimum = 7, maximum = 28, devil = 3 },
-		[tostring(RoomType.ROOM_CURSE)] = { minimum = 2, maximum = 25 }
-	}
+    rooms = {
+        [tostring(RoomType.ROOM_ERROR)] = { minimum = 7, maximum = 28, devil = 3 },
+        [tostring(RoomType.ROOM_CURSE)] = { minimum = 2, maximum = 25 }
+    }
 }
 
-
 --[[  Initial Declarations  ]]--
-local name, version, apiVersion = "Decision Descent", "0.2.0", 1.0
+local name, version, apiVersion = "Decision Descent", "0.3.0", 1.0
 local DecisionDescent = RegisterMod(name, apiVersion)
 local fLogger = {  -- Fallback logger
-	info = function(message) Isaac.DebugString(string.format("[Decision Descent][INFO] %s", message)) end,
-	warning = function(message) Isaac.DebugString(string.format("[Decision Descent][WARN] %s", message)) end,
-	critical = function(message) Isaac.DebugString(string.format("[Decision Descent][CRITICAL] %s", message)) end,
-	debug = function(message) Isaac.DebugString(string.format("[Decision Descent][DEBUG] %s", message)) end,
-	fatal = function(message) Isaac.DebugString(string.format("[Decision Descent][FATAL] %s", message)) end,
-	log = function(message) Isaac.DebugString(string.format("[Decision Descent][LOG] %s", message)) end
+    info = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][INFO] %s", message))
+    end,
+    warning = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][WARN] %s", message))
+    end,
+    critical = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][CRITICAL] %s", message))
+    end,
+    debug = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][DEBUG] %s", message))
+    end,
+    fatal = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][FATAL] %s", message))
+    end,
+    log = function(message)
+        Isaac.DebugString(string.format("[Decision Descent][LOG] %s", message))
+    end
 }
 
 
@@ -53,65 +64,65 @@ local http_imported, http = pcall(require, "http")
 
 --[[  Environment Checks  ]]--
 if not debug then
-	fLogger.fatal("Did you make sure to enable luadebug?")
-	fLogger.fatal("You can enable luadebug with the following steps...")
-	fLogger.fatal("    - Navigate to Isaac in your Steam library")
-	fLogger.fatal("    - Right-click Isaac")
-	fLogger.fatal("    - Click properties")
-	fLogger.fatal("    - Click \"SET LAUNCH OPTIONS...\"")
-	fLogger.fatal("    - Type \"--luadebug\" info the text field (without quotations)")
-	fLogger.fatal("    - Click OK")
-	fLogger.fatal("    - Press CLOSE")
-	fLogger.fatal("    - Launch Isaac as normal")
+    fLogger.fatal("Did you make sure to enable luadebug?")
+    fLogger.fatal("You can enable luadebug with the following steps...")
+    fLogger.fatal("    - Navigate to Isaac in your Steam library")
+    fLogger.fatal("    - Right-click Isaac")
+    fLogger.fatal("    - Click properties")
+    fLogger.fatal("    - Click \"SET LAUNCH OPTIONS...\"")
+    fLogger.fatal("    - Type \"--luadebug\" info the text field (without quotations)")
+    fLogger.fatal("    - Click OK")
+    fLogger.fatal("    - Press CLOSE")
+    fLogger.fatal("    - Launch Isaac as normal")
 
-	error("Debug libraries are required to use Decision Descent!")
+    error("Debug libraries are required to use Decision Descent!")
 end
 
 if not json_imported then
-	fLogger.fatal("Isaac's JSON library could not be imported!")
-	fLogger.fatal("You can verify Isaac's local files with the following steps...")
-	fLogger.fatal("    - Navigate to Isaac in your Steam library")
-	fLogger.fatal("    - Right-click Isaac")
-	fLogger.fatal("    - Click the \"LOCAL FILES\" tab")
-	fLogger.fatal("    - Click \"VERIFY INTEGRITY OF GAME FILES...\"")
-	fLogger.fatal("    - Launch Isaac as normal")
-	fLogger.fatal("")
-	
-	fLogger.fatal("Error message:")
-	fLogger.fatal(json)
-	fLogger.fatal("")
+    fLogger.fatal("Isaac's JSON library could not be imported!")
+    fLogger.fatal("You can verify Isaac's local files with the following steps...")
+    fLogger.fatal("    - Navigate to Isaac in your Steam library")
+    fLogger.fatal("    - Right-click Isaac")
+    fLogger.fatal("    - Click the \"LOCAL FILES\" tab")
+    fLogger.fatal("    - Click \"VERIFY INTEGRITY OF GAME FILES...\"")
+    fLogger.fatal("    - Launch Isaac as normal")
+    fLogger.fatal("")
 
-	error("Isaac's JSON library is required to use Decision Descent!")
+    fLogger.fatal("Error message:")
+    fLogger.fatal(json)
+    fLogger.fatal("")
+
+    error("Isaac's JSON library is required to use Decision Descent!")
 end
 
 if not http_imported then
-	fLogger.fatal("Decision Descent's HTTP library is missing!")
-	fLogger.fatal("Isaac should have retrieved this file during launch!")
-	fLogger.fatal("You can get this file with any of the following options...")
-	fLogger.fatal("    - Relaunch Isaac")
-	fLogger.fatal("    - Download it from Decision Descent's Github @ https://github.com/SirRandoo/decision-descent")
-	fLogger.fatal("")
+    fLogger.fatal("Decision Descent's HTTP library is missing!")
+    fLogger.fatal("Isaac should have retrieved this file during launch!")
+    fLogger.fatal("You can get this file with any of the following options...")
+    fLogger.fatal("    - Relaunch Isaac")
+    fLogger.fatal("    - Download it from Decision Descent's Github @ https://github.com/SirRandoo/decision-descent")
+    fLogger.fatal("")
 
-	fLogger.fatal("Error message:")
-	fLogger.fatal(http)
-	fLogger.fatal("")
+    fLogger.fatal("Error message:")
+    fLogger.fatal(http)
+    fLogger.fatal("")
 
-	error("Decision Descent's HTTP library is required to use Decision Descent!")
+    error("Decision Descent's HTTP library is required to use Decision Descent!")
 end
 
 if not utils_imported then
-	fLogger.fatal("Decision Descent's utils library is missing!")
-	fLogger.fatal("Isaac should have retrieved this file during launch!")
-	fLogger.fatal("You can get this file with any of the following options...")
-	fLogger.fatal("    - Relaunch Isaac")
-	fLogger.fatal("    - Download it from Decision Descent's Github @ https://github.com/SirRandoo/decision-descent")
-	fLogger.fatal("")
+    fLogger.fatal("Decision Descent's utils library is missing!")
+    fLogger.fatal("Isaac should have retrieved this file during launch!")
+    fLogger.fatal("You can get this file with any of the following options...")
+    fLogger.fatal("    - Relaunch Isaac")
+    fLogger.fatal("    - Download it from Decision Descent's Github @ https://github.com/SirRandoo/decision-descent")
+    fLogger.fatal("")
 
-	fLogger.fatal("Error message:")
-	fLogger.fatal(utils)
-	fLogger.fatal("")
+    fLogger.fatal("Error message:")
+    fLogger.fatal(utils)
+    fLogger.fatal("")
 
-	error("Decision Descent's utils library is required to use Decision Descent!")
+    error("Decision Descent's utils library is required to use Decision Descent!")
 end
 
 
@@ -124,18 +135,37 @@ local DDLog = DecisionDescent.logger
 
 --[[  Additional Intents  ]]--
 DecisionDescent.http.intents.state = {
-	config = {
-		update = function(modConf)
-			local httpConfig = config.http
-			local roomConfig = config.rooms
+    config = {
+        update = function(modConf)
+            local httpConfig = config.http
+            local roomConfig = config.rooms
 
-			config = modConf
-			config.http = httpConfig
-			config.rooms = roomConfig
+            config = modConf
+            config.http = httpConfig
+            config.rooms = roomConfig
 
-			DDLog:info("Config updated!")
-		end
-	}
+            DDLog:info("Config updated!")
+        end
+    },
+
+    dimensions = {
+        update = function(width, height)
+            if tonumber(width) == nil then
+                width = 0
+            else
+                width = tonumber(width)
+            end
+            if tonumber(height) == nil then
+                height = 0
+            else
+                height = tonumber(height)
+            end
+
+            config.dimensions = { width = width, height = height }
+
+            DDLog:info("Dimensions updated!")
+        end
+    }
 }
 
 
@@ -143,198 +173,222 @@ DecisionDescent.http.intents.state = {
 local succeeded, response = pcall(function() DecisionDescent.http:connect(config.http.host, config.http.port) end)
 
 if not succeeded then
-	DDLog:critical("Could not connect to client!")
-	DDLog:critical("The Lua half of Decision Descent is merely the client's puppet, and cannot function on its own!")
-	DDLog:critical(string.format("Error message: %s", response))
+    DDLog:critical("Could not connect to client!")
+    DDLog:critical("The Lua half of Decision Descent is merely the client's puppet, and cannot function on its own!")
+    DDLog:critical(string.format("Error message: %s", response))
 else
-	DDLog:info("Successfully connected to the client!")
+    DDLog:info("Successfully connected to the client!")
 end
 
 
 --[[  Utility Functions  ]]--
 local function generatePoll()
-	DDLog:info("Generating poll...")
+    DDLog:info("Generating poll...")
 
-	local maximumChoices = 3
-	local game = Game()
-	local room = game:GetRoom()
-	local roomType = room:GetType()
-	local roomSeed = room:GetAwardSeed()
-	local itemConfig = Isaac.GetItemConfig()
-	local itemPool = game:GetItemPool()
-	local choices = {}
+    local maximumChoices = 3
+    local game = Game()
+    local room = game:GetRoom()
+    local roomType = room:GetType()
+    local roomSeed = room:GetAwardSeed()
+    local itemConfig = Isaac.GetItemConfig()
+    local itemPool = game:GetItemPool()
+    local choices = {}
 
-	if config.core then
-		if config.core.maximum_choices < 0 then
-			maximumChoices = 10  -- Reduced for obvious reasons
-		elseif config.core.maximum_choices == 0 then
-			maximumChoices = 0
-		else
-			maximumChoices = config.core.maximum_choices
-		end
-	end
+    if config.core then
+        if config.core.maximum_choices < 0 then
+            maximumChoices = 10  -- Reduced for obvious reasons
+        elseif config.core.maximum_choices == 0 then
+            maximumChoices = 0
+        else
+            maximumChoices = config.core.maximum_choices
+        end
+    end
 
-	local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
-	local roomSpecs = config.rooms[tostring(roomType)]
+    local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
+    local roomSpecs = config.rooms[tostring(roomType)]
 
-	if roomSpecs ~= nil then
-		local shouldGenerate = math.random(roomSpecs.maximum) <= roomSpecs.minimum
+    if roomSpecs ~= nil then
+        local shouldGenerate = math.random(roomSpecs.maximum) <= roomSpecs.minimum
 
-		if not shouldGenerate then
-			return
-		end
-	end
+        if not shouldGenerate then
+            return
+        end
+    end
 
-	while #choices < maximumChoices do
-		local choice = itemPool:GetCollectible(roomPool, false, roomSeed)
+    while #choices < maximumChoices do
+        local choice = itemPool:GetCollectible(roomPool, false, roomSeed)
 
-		if choice ~= nil then
-			local item = itemConfig:GetCollectible(choice)
-			local duplicate = false
+        if choice ~= nil then
+            local item = itemConfig:GetCollectible(choice)
+            local duplicate = false
 
-			for a=1, #choices do
-				if choices[a] == choice then duplicate = true end
-			end
+            for a = 1, #choices do
+                if choices[a] == choice then
+                    duplicate = true
+                end
+            end
 
-			if not duplicate then table.insert(choices, {item.ID, item.Name}) end
-		else
-			break
-		end
-	end
+            if not duplicate then
+                table.insert(choices, { item.ID, item.Name })
+            end
+        else
+            break
+        end
+    end
 
-	if #choices > 1 then
-		directChoices = {}
-		aliases = {}
+    if #choices > 1 then
+        local directChoices = {}
+        local aliases = {}
 
-		for _, itemArray in pairs(choices) do
-			directChoice = tostring(itemArray[1])
-			table.insert(directChoices, directChoice)
-			
-			if aliases[directChoice] ~= nil then
-				table.insert(aliases[directChoice], itemArray[2])
-			else
-				aliases[directChoice] = {itemArray[2]}
-			end
-		end
+        for _, itemArray in pairs(choices) do
+            local directChoice = tostring(itemArray[1])
+            table.insert(directChoices, directChoice)
 
-		if roomSpecs == nil then
-			if roomType ~= RoomType.ROOM_DEVIL then
-				DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-			elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-				DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
-			end
-		else
-			if roomSpecs.devil ~= nil then
-				local isDevilPoll = math.random(roomSpecs.maximum) <= roomSpecs.devil
+            if aliases[directChoice] ~= nil then
+                table.insert(aliases[directChoice], itemArray[2])
+            else
+                aliases[directChoice] = { itemArray[2] }
+            end
+        end
 
-				if roomType ~= RoomType.ROOM_DEVIL then
-					if not isDevilPoll then
-						DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-					else
-						DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
-					end
-				elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-					DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
-				end
-			else
-				if roomType ~= RoomType.ROOM_DEVIL then
-					DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-				elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-					DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
-				end
-			end
-		end
-	else
-		DDLog:info("Insufficient choices!")
-	end
+        if roomSpecs == nil then
+            if roomType ~= RoomType.ROOM_DEVIL then
+                DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
+            elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+                DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+            end
+        else
+            if roomSpecs.devil ~= nil then
+                local isDevilPoll = math.random(roomSpecs.maximum) <= roomSpecs.devil
+
+                if roomType ~= RoomType.ROOM_DEVIL then
+                    if not isDevilPoll then
+                        DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
+                    else
+                        DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+                    end
+                elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+                    DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+                end
+            else
+                if roomType ~= RoomType.ROOM_DEVIL then
+                    DecisionDescent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
+                elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+                    DecisionDescent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+                end
+            end
+        end
+    else
+        DDLog:info("Insufficient choices!")
+    end
 end
 
 
 --[[  Callbacks  ]]--
-function DecisionDescent.POST_GAME_STARTED(isSave) if not isSave then DecisionDescent.http:sendMessage("polls.delete", {"all"}) end end
+function DecisionDescent.POST_GAME_STARTED(isSave)
+    if not isSave then
+        DecisionDescent.http:sendMessage("polls.delete", { "*" })
+    end
+end
 function DecisionDescent.PRE_GAME_EXIT(shouldSave) if shouldSave then DecisionDescent.http:sendMessage("client.close") end end
 function DecisionDescent.POST_NEW_LEVEL() DecisionDescent.http:sendMessage("client.state.level.changed") end
-function DecisionDescent.POST_GET_COLLECTIBLE(collectible, poolType, decrease, seed)
-	local game = Game()
-	local currentRoom = game:GetRoom()
-	local roomType = currentRoom:GetType()
-
-	if roomType == RoomType.ROOM_BOSS then
-		local entities = Isaac.GetRoomEntities()
-		DDLog:info("Attempting to remove collectible...")
-
-		for a=1, #entities do
-			local entity = entities[a]
-
-			if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_COLLECTIBLE and entity.SubType == collectible then
-				entity:Remove()
-				DDLog:info("Collectible removed!")
-				break
-			end
-		end
-	end
-end
 function DecisionDescent.POST_RENDER()
-	local game = Game()
-	local renderPos = Vector(20.0, 40.0)
-	local renderText = string.format("Decision Descent v%s", version)
+    local renderText = string.format("Decision Descent v%s", version)
 
-	if config.hud ~= nil then
-		if config.hud.enabled then
-			Isaac.RenderScaledText(renderText, math.abs(config.hud.x - math.ceil(Isaac.GetTextWidth(renderText) / 2)), config.hud.y, config.hud.width, config.hud.height, 1.0, 1.0, 1.0, config.hud.alpha)
-		end
-	else
-		Isaac.RenderScaledText(renderText, math.abs(renderPos.X - math.ceil(Isaac.GetTextWidth(renderText) / 2)), renderPos.Y, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
-	end
+    if config.dimensions ~= nil then
+        local renderX = math.abs(math.floor(tonumber(config.dimensions.width) / 3) - Isaac.GetTextWidth(renderText))
+
+        if config.hud ~= nil then
+            if config.hud.enabled then
+                local renderY = math.floor((tonumber(config.dimensions.height) / 2) - config.hud.height * 1.5) - 35
+
+                Isaac.RenderScaledText(renderText, renderX, renderY, config.hud.width, config.hud.height, config.hud.text_color.r, config.hud.text_color.g, config.hud.text_color.b, config.hud.alpha)
+            end
+        else
+            local renderY = math.floor(tonumber(config.dimensions.height) / 2)
+
+            Isaac.RenderScaledText(renderText, renderX, renderY, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
+        end
+    end
+
+    if Isaac.GetFrameCount() % 15 == 0 then
+        local currentRoom = Game():GetRoom()
+
+        if currentRoom:GetType() == RoomType.ROOM_BOSS then
+            local centerPos = currentRoom:GetCenterPos()
+            local entities = Isaac.GetRoomEntities()
+
+            for a = 1, #entities do
+                local entity = entities[a]
+
+                if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_COLLECTIBLE then
+                    Isaac.RenderText("+", entity.Position.X, entity.Position.Y, 1.0, 1.0, 1.0, 1.0)
+
+                    if entity.Position.X == centerPos.X then
+                        DDLog:warning("Collectible is within deletion zone!")
+                        DDLog:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
+
+                        entity:Remove()
+                    end
+                end
+            end
+        end
+    end
 end
 function DecisionDescent.POST_UPDATE()
-	if Isaac.GetFrameCount() % 30 == 0 then
-		local status = coroutine.status(DecisionDescent.http.listener)
+    if Isaac.GetFrameCount() % 30 == 0 then
+        local status = coroutine.status(DecisionDescent.http.listener)
 
-		if status == "suspended" then
-			coroutine.resume(DecisionDescent.http.listener)
-		elseif status == "dead" then
-			DDLog:critical("Listener coroutine is dead!")
-			DDLog:critical("Reviving coroutine...")
-			DecisionDescent.http.listener = coroutine.create(function() DecisionDescent.http:onMessage() end)
-		end
-	end
+        if status == "suspended" then
+            coroutine.resume(DecisionDescent.http.listener)
+        elseif status == "dead" then
+            DDLog:critical("Listener coroutine is dead!")
+            DDLog:critical("Reviving coroutine...")
+            DecisionDescent.http.listener = coroutine.create(function()
+                DecisionDescent.http:onMessage()
+            end)
+        end
+    end
 end
 function DecisionDescent.POST_NEW_ROOM()
-	DecisionDescent.http:sendMessage("client.state.room.changed")
+    DecisionDescent.http:sendMessage("client.state.room.changed")
 
-	local game = Game()
-	local currentRoom = game:GetRoom()
-	local currentLevel = game:GetLevel()
-	local roomType = currentRoom:GetType()
-	local levelType = currentLevel:GetStage()
+    local game = Game()
+    local currentRoom = game:GetRoom()
+    local currentLevel = game:GetLevel()
+    local roomType = currentRoom:GetType()
+    local levelType = currentLevel:GetStage()
 
-	--[[  Room Checks  ]]--
-	local isSupportedRoom = roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BLACK_MARKET
+    --[[  Room Checks  ]]--
+    local isSupportedRoom = roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BLACK_MARKET
 
-	if currentRoom:IsFirstVisit() and levelType ~= LevelStage.STAGE5 and levelType ~= LevelStage.STAGE6 then
-		local generator = coroutine.create(generatePoll)
+    if currentRoom:IsFirstVisit() and levelType ~= LevelStage.STAGE5 and levelType ~= LevelStage.STAGE6 then
+        local generator = coroutine.create(generatePoll)
 
-		if levelType == LevelStage.STAGE7 then  -- The Void checks
-			if isSupportedRoom and currentRoom:GetDeliriumDistance() > 0 then
-				coroutine.resume(generator)
-			end
-		elseif levelType == LevelStage.STAGE3_2 or (levelType == LevelStage.STAGE3_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
-			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore the Mom boss room
-				coroutine.resume(generator)
-			end
-		elseif levelType == LevelStage.STAGE4_2 or (levelType == LevelStage.STAGE4_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
-			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore the It Lives! / Mom's Heart boss room
-				coroutine.resume(generator)
-			end
-		elseif levelType == LevelStage.STAGE4_3 then
-			if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then  -- Ignore Hushy's room
-				coroutine.resume(generator)
-			end
-		elseif isSupportedRoom then
-			coroutine.resume(generator)
-		end
-	end
+        if levelType == LevelStage.STAGE7 then
+            -- The Void checks
+            if isSupportedRoom and currentRoom:GetDeliriumDistance() > 0 then
+                coroutine.resume(generator)
+            end
+        elseif levelType == LevelStage.STAGE3_2 or (levelType == LevelStage.STAGE3_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
+                -- Ignore the Mom boss room
+                coroutine.resume(generator)
+            end
+        elseif levelType == LevelStage.STAGE4_2 or (levelType == LevelStage.STAGE4_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
+                -- Ignore the It Lives! / Mom's Heart boss room
+                coroutine.resume(generator)
+            end
+        elseif levelType == LevelStage.STAGE4_3 then
+            if isSupportedRoom and roomType ~= RoomType.ROOM_BOSS then
+                -- Ignore Hushy's room
+                coroutine.resume(generator)
+            end
+        elseif isSupportedRoom then
+            coroutine.resume(generator)
+        end
+    end
 end
 
 
@@ -362,9 +416,6 @@ DecisionDescent:AddCallback(ModCallbacks.MC_POST_RENDER, DecisionDescent.POST_RE
 
 DDLog:info("Registering MC_POST_UPDATE callback...")
 DecisionDescent:AddCallback(ModCallbacks.MC_POST_UPDATE, DecisionDescent.POST_UPDATE)
-
-DDLog:info("Registering MC_POST_GET_COLLECTIBLE...")
-DecisionDescent:AddCallback(ModCallbacks.MC_POST_GET_COLLECTIBLE, DecisionDescent.POST_GET_COLLECTIBLE)
 
 DDLog:info("Callbacks registered!")
 DDLog:info(string.format("Decision Descent v%s loaded!", version))

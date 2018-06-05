@@ -29,4 +29,4 @@ from .http import HttpListener
 from .qapplication import QApplication
 from .metadata import MetadataDialog
 
-from .uis import AuthUi, ClientUi, InfoUi, ProgressUi, SettingsUi, MetadataUi
+from .uis import AuthUi, ClientUi, InfoUi, ProgressUi, MetadataUi

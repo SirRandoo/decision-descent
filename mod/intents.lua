@@ -23,7 +23,8 @@
 
 local function spawnOrGive(collectible)
 	Isaac.DebugString(string.format("spawnOrGive collectible \"%s\"", collectible))
-	if tonumber(collectible) ~= nil then collectible = tonumber(collectible) end
+
+    if tonumber(collectible) ~= nil then collectible = tonumber(collectible) end
 	if type(collectible) == "string" then collectible = Isaac.GetItemIdByName(collectible) end
 	local itemConfig = Isaac.GetItemConfig()
 	local player = Isaac.GetPlayer(0)

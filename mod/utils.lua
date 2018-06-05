@@ -28,40 +28,46 @@ function string:isUpper() return string.upper(self) == self end
 function string:isLower() return string.lower(self) == self end
 
 local function splitIntent(intent)
-	local segments = {}
-	Isaac.DebugString(intent)
-	for segment in intent:gmatch("%w+") do 
-		Isaac.DebugString(segment)
-		table.insert(segments, segment) 
-	end
+    local segments = {}
 
-	return segments
+    for segment in intent:gmatch("%w+") do
+        Isaac.DebugString(segment)
+        table.insert(segments, segment)
+    end
+
+    return segments
 end
 
 local function crawlStacktrace()
-	local currentStack = 1
+    local currentStack = 1
 
-	while true do
-		local stack = debug.getinfo(currentStack, "Snl")
+    while true do
+        local stack = debug.getinfo(currentStack, "Snl")
 
-		if stack == nil then
-			break
-		else
-			if not stack.source:endswith("utils.lua") then
-				local source, funcName, curLine = "(unknown file)", "(unknown function)", -1
+        if stack == nil then
+            break
+        else
+            if not stack.source:endswith("utils.lua") then
+                local source, funcName, curLine = "(unknown file)", "(unknown function)", -1
 
-				source = string.sub(stack.source, 2, string.len(stack.source))
-				source, _ = source:gsub("(.*)[dD]ecision.[dD]escent%p", "")
-				if stack.name then funcName = stack.name end
-				if stack.currentline then curLine = stack.currentline end
-				if string.len(source) > 60 then source = string.sub(source, 1, 57) .. "..." end
+                source = string.sub(stack.source, 2, string.len(stack.source))
+                source, _ = source:gsub("(.*)[dD]ecision.[dD]escent%p", "")
+                if stack.name then
+                    funcName = stack.name
+                end
+                if stack.currentline then
+                    curLine = stack.currentline
+                end
+                if string.len(source) > 60 then
+                    source = string.sub(source, 1, 57) .. "..."
+                end
 
-				return source, funcName, curLine
-			else
-				currentStack = currentStack + 1
-			end
-		end
-	end
+                return source, funcName, curLine
+            else
+                currentStack = currentStack + 1
+            end
+        end
+    end
 end
 
 
@@ -78,32 +84,34 @@ Logger.__index = Logger
 
 
 function Logger.new(loggerName)
-	if loggerName == nil then loggerName = "root" end
-	local returnable = {}
+    if loggerName == nil then
+        loggerName = "root"
+    end
+    local returnable = {}
 
-	returnable.name = loggerName
-	returnable.msgFormat = "[{level}][{name}][{file}][{funcName}][Line #{line}] {message}"
-	setmetatable(returnable, Logger)
+    returnable.name = loggerName
+    returnable.msgFormat = "[{level}][{name}][{file}][{funcName}][Line #{line}] {message}"
+    setmetatable(returnable, Logger)
 
-	return returnable
+    return returnable
 end
 
 function Logger:format(level, callerFile, callerName, callerLine, message)
-	local returnString = self.msgFormat:gsub("{level}", level)
-	returnString = returnString:gsub("{name}", self.name)
-	returnString = returnString:gsub("{file}", callerFile)
-	returnString = returnString:gsub("{funcName}", callerName)
-	returnString = returnString:gsub("{line}", callerLine)
-	returnString = returnString:gsub("{message}", tostring(message))
+    local returnString = self.msgFormat:gsub("{level}", level)
+    returnString = returnString:gsub("{name}", self.name)
+    returnString = returnString:gsub("{file}", callerFile)
+    returnString = returnString:gsub("{funcName}", callerName)
+    returnString = returnString:gsub("{line}", callerLine)
+    returnString = returnString:gsub("{message}", tostring(message))
 
-	return returnString
+    return returnString
 end
 
 function Logger:setFormat(format) self.msgFormat = format end
 
 function Logger:log(level, message)
-	local callerFile, callerName, callerLine = crawlStacktrace()
-	Isaac.DebugString(self:format(level, callerFile, callerName, callerLine, message))
+    local callerFile, callerName, callerLine = crawlStacktrace()
+    Isaac.DebugString(self:format(level, callerFile, callerName, callerLine, message))
 end
 
 function Logger:debug(message)	self:log("DEBUG", message) end
@@ -115,24 +123,26 @@ function Logger:critical(message) self:log("CRITICAL", message) end
 
 --[[  Logger Functions  ]]--
 local function getLogger(loggerName)
-	if loggerName == nil then loggerName = "root" end
+    if loggerName == nil then
+        loggerName = "root"
+    end
 
-	if loggers[loggerName] ~= nil then
-		return loggers[loggerName]
-	else
-		loggers[loggerName] = Logger.new(loggerName)
+    if loggers[loggerName] ~= nil then
+        return loggers[loggerName]
+    else
+        loggers[loggerName] = Logger.new(loggerName)
 
-		return loggers[loggerName]
-	end
+        return loggers[loggerName]
+    end
 end
 
 
 
 
 return {
-	["crawlStacktrace"] = crawlStacktrace,
-	["log_levels"]      = log_levels,
-	["logger"]          = Logger,
-	["getLogger"]       = getLogger,
-	["splitIntent"]     = splitIntent
+    ["crawlStacktrace"] = crawlStacktrace,
+    ["log_levels"] = log_levels,
+    ["logger"] = Logger,
+    ["getLogger"] = getLogger,
+    ["splitIntent"] = splitIntent
 }

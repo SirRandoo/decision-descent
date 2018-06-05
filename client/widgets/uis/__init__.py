@@ -23,7 +23,6 @@
 # with Decision Descent: Client.  
 # If not, see <http://www.gnu.org/licenses/>.
 from .client import Ui_ClientApp as ClientUi
-from .settings import Ui_DDSettings as SettingsUi
 from .auth import Ui_AuthScreen as AuthUi
 from .progress import Ui_ProgressDialog as ProgressUi
 from .metadata import Ui_MetadataDialog as MetadataUi

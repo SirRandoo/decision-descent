@@ -24,15 +24,15 @@
 import inspect
 import logging
 import os
-import platform
 import traceback
 import typing
+import win32gui
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import utils
 from utils import dataclasses
-from . import http, info, metadata, settings, tray
+from . import http, info, metadata, tray
 from .uis import ClientUi
 
 __all__ = {"Client"}
@@ -43,7 +43,7 @@ class Client(QtWidgets.QMainWindow):
     LICENSE = "GNU General Public License 3 or later"
     NAME = "Decision Descent: Client"
     AUTHORS = ["SirRandoo"]
-    VERSION = (0, 2, 0)
+    VERSION = (0, 3, 0)
     
     def __init__(self, parent: QtWidgets.QWidget = None):
         # Super Call #
@@ -57,36 +57,54 @@ class Client(QtWidgets.QMainWindow):
         self.configs = dict(settings=utils.Config("settings.ini", configspec=".meta/settings.ini"),
                             descent=utils.Config("descent.ini", configspec=".meta/descent.ini"))
         self.handlers = [logging.FileHandler("log.txt", encoding="UTF-8", mode="w"), utils.Log(self.ui.client_log)]
-        self.formatter = logging.Formatter(fmt="[{asctime}][{levelname}][{name}][{funcName}] {message}",
-                                           datefmt="%H:%M:%S",
-                                           style="{")
-        self.logger = self.setup_logger("client")  # type: logging.Logger
+        self.formatter = utils.DescentFormatter(fmt="[{asctime}][{levelname}][{name}][{funcName}] {message}",
+                                                datefmt="%H:%M:%S",
+                                                style="{")
+        self.logger = logging.getLogger("client")
         self.integrations = list()
+        self.loggers = list()
         
         self.display = info.Info(parent=self)
         self.tray = tray.TrayIcon(parent=self)
         self.http = http.HttpListener(parent=self)
-        self.settings = settings.Settings(parent=self)
         self.metadata = metadata.MetadataDialog(parent=self)
-        self.data = utils.DescentData(self.http, self.configs, parent=self)
+        self.data = utils.DescentData(self, parent=self)
         self.show_action = QtWidgets.QAction("Show", parent=self.tray.menu)
+
         self.isaac_timer = QtCore.QTimer(parent=self)
+        self.isaac_window_size = QtCore.QSize()
         self.isaac_log = self.find_isaac_log()
-        self.isaac_size = 0
+        self.isaac_log_restriction = "all"
+        self.isaac_size = QtCore.QSize(0, 0)
+        self.isaac_log_size = 0
         
         # "Private" Attributes #
         self._shutting_down = False
         
         # Internal Calls #
+        self.setup_logger("client")
         self.setup_logger("QtTwitch")
         self.ui.menu_bar.raise_()  # Fixes the menubar not showing actions
         self.tray.show()
+
+        # Called before bind() so we don't unnecessarily repopulate the log
+        self.ui.client_filter.setCurrentIndex(self.ui.client_filter.findText("All"))
+        self.ui.isaac_filter.setCurrentIndex(self.ui.isaac_filter.findText("All"))
+        self.ui.isaac_filter_modifier.setChecked(False)
+
+        # Set acceptable close methods
+        self.ui.menu_quit.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL | QtCore.Qt.Key_Q,
+                                                         QtCore.Qt.ALT | QtCore.Qt.Key_F4))
         
         self.bind()
         self.mirror_menubar()
         self.setup_metadata()
         self.load_integrations()
         self.http.connect()
+
+        self.isaac_timer.start(1000)
+        self.ui.client_log.verticalScrollBar().setValue(self.ui.client_log.verticalScrollBar().maximum())
+        self.ui.isaac_log.verticalScrollBar().setValue(self.ui.isaac_log.verticalScrollBar().maximum())
         
         self.setWindowIcon(QtGui.QIcon('assets/icon.png'))
         self.tray.tray_icon.setIcon(self.windowIcon())
@@ -94,7 +112,6 @@ class Client(QtWidgets.QMainWindow):
         if self.isaac_log is not None:
             if not self.isaac_log.isOpen():
                 self.isaac_log.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text)
-                self.isaac_timer.start(500)
     
     # Integration Methods #
     def load_integrations(self, path: str = None):
@@ -114,15 +131,15 @@ class Client(QtWidgets.QMainWindow):
                 item_path = os.path.normpath(os.path.join(path, item))
                 item_path = ".".join(item_path.split(os.sep))
                 integration = dataclasses.Integration(item_path)
-        
+
                 try:
                     integration.load(self)
-        
+
                 except utils.errors.MethodMissingError as e:
                     self.logger.warning(f'Integration "{item_path}" could not be loaded!')
                     self.logger.warning(str(e))
                     failed += 1
-        
+
                 else:
                     self.integrations.append(integration)
         
@@ -165,23 +182,23 @@ class Client(QtWidgets.QMainWindow):
         """Binds all menubar objects to their respective slots."""
         self.logger.info("Binding menubar actions to their respective slots...")
 
-        self.logger.info("Binding menubar action...")
-        self.ui.menu_bar.triggered.connect(self.force_menu)
+        self.logger.info("Binding menu_settings.triggered action...")
+        self.ui.menu_settings.triggered.connect(lambda: self.logger.info("The settings menu is currently disabled."))
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding quit action...")
+
+        self.logger.info("Binding menu_quit.triggered action...")
         self.ui.menu_quit.triggered.connect(lambda: QtWidgets.qApp.exit(0))
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding help action...")
+
+        self.logger.info("Binding help_help.triggered action...")
         self.ui.help_help.triggered.connect(self.help)
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding about action...")
+
+        self.logger.info("Binding help_about.triggered action...")
         self.ui.help_about.triggered.connect(self.about)
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding license action...")
+
+        self.logger.info("Binding help_license.triggered action...")
         self.ui.help_license.triggered.connect(self.license)
         self.logger.info("Bound!")
         
@@ -190,23 +207,23 @@ class Client(QtWidgets.QMainWindow):
     def bind_tray(self):
         """Binds all tray actions to their respective slots."""
         self.logger.info("Binding tray events to their respective slots...")
-        
-        self.logger.info("Binding clicked signal...")
+
+        self.logger.info("Binding tray.clicked signal...")
         self.tray.clicked.connect(self.showNormal)
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding middle-clicked signal...")
+
+        self.logger.info("Binding tray.middle_clicked signal...")
         self.tray.middle_clicked.connect(self.showNormal)
         self.logger.info("Bound!")
-        
-        self.logger.info("Binding double-clicked event...")
+
+        self.logger.info("Binding tray.double_clicked event...")
         self.tray.double_clicked.connect(self.showNormal)
         self.logger.info("Bound!")
         
         self.logger.info("Tray events bound to their respective slots!")
         self.logger.info("Binding tray signals to their respective slots...")
-        
-        self.logger.info("Binding show signal...")
+
+        self.logger.info("Binding show_action.triggered signal...")
         self.show_action.triggered.connect(self.showNormal)
         self.logger.info("Bound!")
         
@@ -216,11 +233,11 @@ class Client(QtWidgets.QMainWindow):
         """Binds all http signals to their respective slots."""
         self.logger.info("Binding HTTP signals to their respective slots...")
 
-        self.logger.info("Binding on_response signal...")
+        self.logger.info("Binding http.on_response signal...")
         self.http.on_response.connect(self.data.process_message)
         self.logger.info("Bound!")
 
-        self.logger.info("Binding on_connection_received signal...")
+        self.logger.info("Binding http.on_connection_received signal...")
         self.http.on_connection_received.connect(self.data.process_new_connection)
         self.logger.info("Bound!")
         
@@ -229,14 +246,32 @@ class Client(QtWidgets.QMainWindow):
     def bind_attributes(self):
         """Binds all attribute signals to their respective slots."""
         self.logger.info("Binding attribute signals to their respective slots...")
-    
+
         if self.isaac_log is not None:
-            self.logger.info("Binding timeout signal...")
-            self.isaac_timer.timeout.connect(self.process_log_changes)
+            self.logger.info("Binding isaac_timer.timeout signal...")
+            self.isaac_timer.timeout.connect(self.process_isaac_tasks)
             self.logger.info("Bound!")
-    
+
         self.logger.info("Bound all attribute signals to their respective slots!")
 
+    def bind_log(self):
+        """Binds all log-related widgets to their respective slots."""
+        self.logger.info("Binding log-related widgets to their respective slots....")
+    
+        self.logger.info("Binding client_filter.currentIndexChanged to its respective slot...")
+        self.ui.client_filter.currentIndexChanged.connect(self.adjust_client_log_filter)
+        self.logger.info("Bound!")
+    
+        self.logger.info("Binding isaac_filter.currentIndexChanged to its respective slot...")
+        self.ui.isaac_filter.currentIndexChanged.connect(self.adjust_isaac_log_filter)
+        self.logger.info("Bound!")
+    
+        self.logger.info("Binding isaac_filter_modifier.clicked to its respective slot...")
+        self.ui.isaac_filter_modifier.clicked.connect(self.adjust_isaac_log_filter)
+        self.logger.info("Bound!")
+    
+        self.logger.info("Bound all log-related widgets to their respective slots...")
+    
     # Menu Methods #
     def help(self):
         """Displays the Decision Descent: Wiki"""
@@ -281,33 +316,25 @@ class Client(QtWidgets.QMainWindow):
         
         self._shutting_down = True
         self.close()
-
-    def force_menu(self, action: QtWidgets.QAction):
-        """Forces the menubar's menu to be shown."""
     
     # Utility Methods #
     def setup_logger(self, name: str) -> logging.Logger:
         """Sets up the logger passed."""
-        can_log = hasattr(self, "logger")
         logger = logging.getLogger(name)
-        
-        if logger.hasHandlers() and can_log:
+
+        if logger.hasHandlers():
             self.logger.warning(f'Logger `{name}` already has handlers attached!')
-        
-        if can_log:
-            self.logger.info(f'Adding handlers to `{name}`...')
-        
+
+        self.logger.info(f'Adding handlers to `{name}`...')
         for handler in self.handlers:
             if handler not in logger.handlers:
                 logger.addHandler(handler)
                 
                 if handler.formatter is None:
                     handler.setFormatter(self.formatter)
-        
-        if can_log:
-            self.logger.info(f'Setting logger level to client\'s level...')
 
-        logger.setLevel(logging.DEBUG if self.configs["settings"]["debug"]["enabled"] else logging.INFO)
+        self.logger.info(f'Setting logger level to client\'s level...')
+        logger.setLevel(logging.DEBUG if self.configs["settings"]["debug"].as_bool("enabled") else logging.INFO)
         
         return logger
     
@@ -341,36 +368,166 @@ class Client(QtWidgets.QMainWindow):
 
     def find_isaac_log(self) -> typing.Union[QtCore.QFile, None]:
         """Attempts to find Isaac's log file."""
-        if platform.system() == "Windows":
+        if QtWidgets.qApp.platformName() == "windows":
             user_directory = os.getenv("USERPROFILE")
             isaac_directory = os.path.join(user_directory, "Documents\\My Games\\Binding of Isaac Afterbirth+")
-        
+
             return QtCore.QFile(os.path.join(isaac_directory, "log.txt"), self)
-    
+
         else:
             return None
 
-    # Slots #
-    def process_log_changes(self):
-        """Processes changes to the Isaac log file."""
-        if self.isaac_log is not None:
-            if self.isaac_log.isReadable():
-                if self.isaac_size > self.isaac_log.size():  # Let's assume the log was overwritten
-                    self.isaac_size = self.isaac_log.size()
-                    self.ui.isaac_log.clear()
-                    self.isaac_log.seek(0)
+    def adjust_client_log_filter(self):
+        """Adjusts the client log's filter level."""
+        self.logger.debug("Adjusting client log...")
+    
+        requested_filter = self.ui.client_filter.currentText().lower()
+        color_filter = requested_filter.upper()
+        filter_check = "[{}]".format(requested_filter.title())
+    
+        self.logger.debug("Finding color matrix...")
+        for handler in self.handlers:
+            if isinstance(handler, utils.Log):
+                self.logger.debug("Found!")
             
-                while not self.isaac_log.atEnd():
-                    data = self.isaac_log.readLine()
+                self.logger.debug("Enforcing filter on future messages...")
+                handler.restriction = requested_filter
+                self.logger.debug("Done!")
+            
+                self.logger.debug("Clearing log...")
+                self.ui.client_log.clear()
+                self.logger.debug("Cleared!")
+            
+                self.logger.debug("Repopulating log display...")
+                log = QtCore.QFile("log.txt")
+            
+                if not log.isOpen():
+                    log.open(log.Text | log.ReadOnly)
+            
+                while not log.atEnd():
+                    data = log.readLine()  # type: QtCore.QByteArray
                 
                     if not data.isEmpty():
-                        data = utils.format_isaac(data.data().decode())
+                        data = data.data().decode()
                     
-                        if data is not None:
-                            self.ui.isaac_log.append(data)
+                        if data[len("[HH:MM:SS]"):].startswith(filter_check):
+                            self.ui.client_log.append(f'<span style="color: #{handler.colors[color_filter]}">'
+                                                      f'{data}</span><br/>')
+                    
+                        elif requested_filter == "all":
+                            for level, color in handler.colors.items():
+                                if data[len("[HH:MM:SS]"):].startswith(f'[{level.title()}]'):
+                                    self.ui.client_log.append(f'<span style="color: #{color}">{data}</span><br/>')
+                
                     QtWidgets.qApp.processEvents()
             
-                self.isaac_size = self.isaac_log.size()
+                if log.isOpen():
+                    log.close()
+
+    def adjust_isaac_log_filter(self):
+        """Adjusts Isaac log's filter level."""
+        if self.isaac_log is not None:
+            self.logger.debug("Adjusting Isaac log...")
+        
+            requested_filter = self.ui.isaac_filter.currentText().lower()
+            only_companion = self.ui.isaac_filter_modifier.isChecked()
+            filter_check = "[{}]".format(requested_filter.title())
+        
+            self.logger.debug("Finding color matrix...")
+            for handler in self.handlers:
+                if isinstance(handler, utils.Log):
+                    self.logger.debug("Found!")
+                
+                    self.logger.debug("Enforcing filter on future messages...")
+                    handler.restriction = requested_filter
+                    self.logger.debug("Done!")
+                
+                    self.logger.debug("Clearing log...")
+                    self.ui.isaac_log.clear()
+                    self.logger.debug("Cleared!")
+                
+                    self.logger.debug("Repopulating log display...")
+                    log = QtCore.QFile(self.isaac_log.fileName())
+                
+                    if not log.isOpen():
+                        log.open(log.Text | log.ReadOnly)
+                
+                    while not log.atEnd():
+                        data = log.readLine()  # type: QtCore.QByteArray
+                    
+                        if not data.isEmpty():
+                            formatted_data, is_mod = utils.format_isaac(data.data().decode())
+                        
+                            if formatted_data is not None:
+                                stripped_data = formatted_data[32:len(formatted_data) - 12]
+                            
+                                if stripped_data[len("[HH:MM:SS]"):].startswith(filter_check):
+                                    if only_companion and is_mod:
+                                        self.ui.isaac_log.append(formatted_data)
+                                
+                                    elif not only_companion:
+                                        self.ui.isaac_log.append(formatted_data)
+                            
+                                elif requested_filter == "all":
+                                    if only_companion and is_mod:
+                                        self.ui.isaac_log.append(formatted_data)
+                                
+                                    elif not only_companion:
+                                        self.ui.isaac_log.append(formatted_data)
+                    
+                        QtWidgets.qApp.processEvents()
+                
+                    if log.isOpen():
+                        log.close()
+    
+    # Slots #
+    def process_isaac_tasks(self):
+        """Processes Isaac-related tasks."""
+        if self.isaac_log is not None:
+            if self.isaac_log.isReadable():
+                if self.isaac_log_size > self.isaac_log.size():  # Let's assume the log was overwritten
+                    self.isaac_log_size = self.isaac_log.size()
+                    self.ui.isaac_log.clear()
+                    self.isaac_log.seek(0)
+    
+                while not self.isaac_log.atEnd():
+                    data = self.isaac_log.readLine()  # type: QtCore.QByteArray
+                    
+                    if not data.isEmpty():
+                        data, is_mod = utils.format_isaac(data.data().decode())
+                        
+                        if data is not None:
+                            if self.ui.isaac_filter_modifier.isChecked() and is_mod:
+                                self.ui.isaac_log.append(data)
+    
+                            elif not self.ui.isaac_filter_modifier.isChecked():
+                                self.ui.isaac_log.append(data)
+                    QtWidgets.qApp.processEvents()
+    
+                self.isaac_log_size = self.isaac_log.size()
+    
+        isaac_window = win32gui.FindWindow(None, "Binding of Isaac: Afterbirth+")
+    
+        if isaac_window > 0:
+            window_rect = win32gui.GetWindowRect(isaac_window)
+            window_width = abs(window_rect[0] - window_rect[2])
+            window_height = abs(window_rect[1] - window_rect[3])
+        
+            if window_width != self.isaac_size.width():
+                self.logger.warning("Isaac dimensions differ from our cache!")
+                self.logger.info("Sending new dimensions to mod...")
+            
+                self.isaac_size = QtCore.QSize(window_width, window_height)
+                self.http.send_message(utils.dataclasses.Message.from_json(dict(intent="state.dimensions.update",
+                                                                                args=[window_width, window_height])))
+        
+            elif window_height != self.isaac_size.height():
+                self.logger.warning("Isaac dimensions differ from our cache!")
+                self.logger.info("Sending new dimensions to mod...")
+            
+                self.isaac_size = QtCore.QSize(window_width, window_height)
+                self.http.send_message(utils.dataclasses.Message.from_json(dict(intent="state.dimensions.update",
+                                                                                args=[window_width, window_height])))
     
     # Qt Events #
     def closeEvent(self, a0: QtGui.QCloseEvent):

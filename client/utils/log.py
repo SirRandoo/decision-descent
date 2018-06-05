@@ -23,7 +23,7 @@
 #  File Creation Date: 7/21/2017
 import datetime
 import logging
-import os
+import typing
 
 from PyQt5 import QtWidgets
 
@@ -42,19 +42,22 @@ class Log(logging.Handler):
     def __init__(self, obj: QtWidgets.QTextBrowser):
         super(Log, self).__init__()
         self.log_object = obj  # type: QtWidgets.QTextBrowser
+        self.restriction = "all"
     
     def emit(self, record: logging.LogRecord):
         color_msg = self.format(record)
-        
-        if self.colors.get(record.levelname.upper()):
-            color_msg = '<span style="color: #{}">{}</span><br/>'.format(self.colors.get(record.levelname), color_msg)
+        level_name = record.levelname.upper()
+
+        if level_name in self.colors:
+            color_msg = f'<span style="color: #{self.colors[level_name]}">{color_msg}</span><br/>'
         
         if self.log_object is not None:  # type: QtWidgets.QTextBrowser
-            try:
-                self.log_object.append(color_msg)
-            
-            except RuntimeError:
-                self.log_object = None
+            if record.levelname.lower() == self.restriction or self.restriction.lower() == "all":
+                try:
+                    self.log_object.append(color_msg)
+        
+                except RuntimeError:
+                    self.log_object = None
 
 
 class DescentFormatter(logging.Formatter):
@@ -67,7 +70,7 @@ class DescentFormatter(logging.Formatter):
         return item
 
 
-def format_isaac(input_text: str) -> str:
+def format_isaac(input_text: str) -> typing.Tuple[typing.Union[None, str], bool]:
     log_format = "[{time}][{level}][{name}][{function}] {message}"
     input_text = input_text.strip()
     
@@ -79,7 +82,7 @@ def format_isaac(input_text: str) -> str:
             function="core",
             message=input_text.strip()
         )
-        return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>'
+        return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>', False
     
     else:
         if input_text.startswith("[INFO] - ERR"):
@@ -91,7 +94,7 @@ def format_isaac(input_text: str) -> str:
                 function="api",
                 message=input_text.strip()
             )
-            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>'
+            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>', False
         
         elif input_text.startswith("[INFO] - There was an error running the lua file:"):
             input_text = input_text.replace("[INFO] - ", "", 1)
@@ -102,7 +105,7 @@ def format_isaac(input_text: str) -> str:
                 function="api",
                 message=input_text.strip()
             )
-            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>'
+            return f'<span style="color: #{Log.colors["WARNING"]}">{_temp}</span><br/>', False
         
         elif input_text.startswith("[INFO] - Lua Debug: ["):
             input_text = input_text.replace("[INFO] - Lua Debug: ", "", 1)
@@ -113,8 +116,8 @@ def format_isaac(input_text: str) -> str:
                         datetime.datetime.now().strftime("%H:%M:%S"),
                         input_text.strip()
                     )
-                    
-                    return f'<span style="color: #{color}">{input_text}</span><br/>'
+
+                    return f'<span style="color: #{color}">{input_text}</span><br/>', True
         
         elif input_text.startswith("[INFO] - Lua Debug: "):
             input_text = input_text.replace("[INFO] - Lua Debug: ", "", 1)
@@ -125,7 +128,7 @@ def format_isaac(input_text: str) -> str:
                 function="LuaDebug",
                 message=input_text.strip()
             )
-            return f'<span style="color: #{Log.colors["DEBUG"]}">{_temp}</span><br/>'
+            return f'<span style="color: #{Log.colors["DEBUG"]}">{_temp}</span><br/>', False
         
         elif input_text.startswith("[INFO]"):
             input_text = input_text.replace("[INFO] - ", "", 1)
@@ -136,4 +139,7 @@ def format_isaac(input_text: str) -> str:
                 function="core",
                 message=input_text.strip()
             )
-            return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>'
+            return f'<span style="color: #{Log.colors["INFO"]}">{_temp}</span><br/>', False
+
+        else:
+            return None, False

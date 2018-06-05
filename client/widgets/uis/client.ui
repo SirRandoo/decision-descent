@@ -48,8 +48,18 @@
                                 <string>Client</string>
                             </attribute>
                             <layout class="QGridLayout" name="client_log_layout">
-                                <item row="1" column="0" colspan="2">
-                                    <widget class="QTextBrowser" name="client_log"/>
+                                <item row="0" column="0">
+                                    <widget class="QLabel" name="client_filter_label">
+                                        <property name="text">
+                                            <string>Filter Level</string>
+                                        </property>
+                                        <property name="alignment">
+                                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                                        </property>
+                                        <property name="wordWrap">
+                                            <bool>true</bool>
+                                        </property>
+                                    </widget>
                                 </item>
                                 <item row="0" column="1">
                                     <widget class="QComboBox" name="client_filter">
@@ -91,18 +101,8 @@
                                         </item>
                                     </widget>
                                 </item>
-                                <item row="0" column="0">
-                                    <widget class="QLabel" name="client_filter_label">
-                                        <property name="text">
-                                            <string>Filter Level</string>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                                        </property>
-                                        <property name="wordWrap">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
+                                <item row="1" column="0" colspan="2">
+                                    <widget class="QTextBrowser" name="client_log"/>
                                 </item>
                             </layout>
                         </widget>
@@ -158,9 +158,6 @@
                                         </item>
                                     </widget>
                                 </item>
-                                <item row="2" column="0" colspan="2">
-                                    <widget class="QTextBrowser" name="isaac_log"/>
-                                </item>
                                 <item row="1" column="1">
                                     <widget class="QCheckBox" name="isaac_filter_modifier">
                                         <property name="text">
@@ -170,6 +167,9 @@
                                             <bool>true</bool>
                                         </property>
                                     </widget>
+                                </item>
+                                <item row="2" column="0" colspan="2">
+                                    <widget class="QTextBrowser" name="isaac_log"/>
                                 </item>
                             </layout>
                         </widget>

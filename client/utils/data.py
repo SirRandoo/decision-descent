@@ -26,7 +26,7 @@ import traceback
 import typing
 from collections import namedtuple
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 
 from . import dataclasses
 
@@ -37,8 +37,8 @@ Poll = namedtuple("Poll", ["instance", "intent"])
 
 class DescentData(QtCore.QObject):
     on_poll_created = QtCore.pyqtSignal(object)
-    
-    def __init__(self, http, config: dict, parent: QtCore.QObject = None):
+
+    def __init__(self, client, parent: QtCore.QObject = None):
         # Super Call #
         super(DescentData, self).__init__(parent=parent)
         
@@ -46,8 +46,9 @@ class DescentData(QtCore.QObject):
         self.logger = logging.getLogger("client.data")
         
         # "Private" Attributes #
-        self._http = http
-        self._config = config
+        self._client = client
+        self._http = client.http
+        self._config = client.configs
         self._tear_effects = list()
         self._level_master = None
         self._players = list()  # Plural since Antibirth/True Co-op support is planned
@@ -150,7 +151,7 @@ class DescentData(QtCore.QObject):
 
     def polls_delete(self, identifier_or_alias: str):
         """The callable for intent "polls.delete"."""
-        if identifier_or_alias.lower() == "all":
+        if identifier_or_alias == "*":
             self.logger.warning("Deleting all polls...")
         
             for poll in self._polls.copy():
@@ -238,23 +239,30 @@ class DescentData(QtCore.QObject):
         """Invoked when the HTTP listener receives a new connection."""
         self.logger.info("Sending config to Isaac...")
         conf_alias = self._config["descent"]
-    
-        self._http.send_message(dataclasses.Message.from_json({
-            "intent": "state.config.update",
-            "args": [{
-                "core": {"maximum_choices": conf_alias["core"].as_int("maximum_choices")},
-                "hud": {
-                    "enabled": conf_alias["hud"].as_bool("hud_enabled"),
-                    "text_color": conf_alias["hud"]["text_color"],
-                    "alpha": conf_alias["hud"].as_float("transparency"),
-                    "width": conf_alias["hud"].as_float("width"),
-                    "height": conf_alias["hud"].as_float("height"),
-                    "x": conf_alias["hud"].as_float("x"),
-                    "y": conf_alias["hud"].as_float("y")
-                },
-                "debug": {"enabled": conf_alias["debug"].as_bool("enabled")}
-            }]
-        }))
+
+        if conf_alias["hud"]["text_color"].startswith("#"):
+            color = QtGui.QColor(conf_alias["hud"]["text_color"])
+
+        else:
+            color = QtGui.QColor(f'#{conf_alias["hud"]["text_color"]}')
+
+        color_rgb = color.getRgb()
+
+        self._http.send_message(dataclasses.Message.from_json(dict(
+            intent="state.config.update", args=[dict(
+                core=dict(maximum_choices=conf_alias["core"].as_int("maximum_choices")),
+                hud=dict(
+                    enabled=conf_alias["hud"].as_bool("hud_enabled"),
+                    text_color=dict(r=color_rgb[0] / 255, g=color_rgb[1] / 255, b=color_rgb[2] / 255),
+                    alpha=conf_alias["hud"].as_float("transparency"),
+                    width=conf_alias["hud"].as_float("width"),
+                    height=conf_alias["hud"].as_float("height")),
+                debug=dict(enabled=conf_alias["debug"].as_bool("enabled")))
+            ])))
+
+        self._http.send_message(dataclasses.Message.from_json(dict(
+            intent="state.dimensions.update", args=[self._client.isaac_size.width(), self._client.isaac_size.height()]
+        )))
     
     def process_poll(self, poll_id: str):
         """Processes signals from polls."""

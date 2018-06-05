@@ -84,16 +84,20 @@ class HttpListener(QtCore.QObject):
             unencoded_message += "\r\n"
         
         self.logger.info("Sending message to Isaac...")
-        if self._client.state() == self._client.ConnectedState and self._client.isWritable():
-            bytes_written = self._client.write(unencoded_message.encode())
-    
-            if bytes_written == -1:
-                self.logger.warning("Message could not be sent!")
-                self.logger.warning("Error message: {}".format(self._client.errorString()))
-                self.logger.warning("Error code: {}".format(self._client.error()))
-    
-            else:
-                self.logger.info(f"{bytes_written} bytes sent!")
+        if self._client is not None:
+            if self._client.state() == self._client.ConnectedState and self._client.isWritable():
+                bytes_written = self._client.write(unencoded_message.encode())
+        
+                if bytes_written == -1:
+                    self.logger.warning("Message could not be sent!")
+                    self.logger.warning("Error message: {}".format(self._client.errorString()))
+                    self.logger.warning("Error code: {}".format(self._client.error()))
+        
+                else:
+                    self.logger.info(f"{bytes_written} bytes sent!")
+
+        else:
+            self.logger.warning("No client has connected yet!")
     
     # Slots #
     def on_message(self):

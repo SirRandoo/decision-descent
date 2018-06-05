@@ -24,13 +24,7 @@
 import logging
 import sys
 
-from PyQt5 import QtCore
-
 from widgets import Client, QApplication
-
-# TODO: The Void level's boss rooms spawn polls.. to fix or not to fix?
-
-possible_unload_methods = ["quit", "shutdown", "unload"]
 
 if __name__ == '__main__':
     ClientApplication = QApplication(sys.argv)
