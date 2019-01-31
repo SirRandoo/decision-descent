@@ -1,0 +1,7 @@
+PyQt5==5.11.3
+psutil==5.4.8
+pywin32==224; sys_platform == 'win32'
+
+git+https://github.com/sirrandoo/qtutilities#egg=QtUtilities
+git+https://github.com/sirrandoo/qttwitch#egg=QtTwitch
+

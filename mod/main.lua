@@ -23,35 +23,46 @@
 
 --[[  Mini Config  ]]--
 local config = {
+    -- HTTP settings
     http = { host = "127.0.0.1", port = 25565 },
-
+    
+    -- RNG Rooms
     rooms = {
         [tostring(RoomType.ROOM_ERROR)] = { minimum = 7, maximum = 28, devil = 3 },
         [tostring(RoomType.ROOM_CURSE)] = { minimum = 2, maximum = 25 }
+    },
+    
+    -- Items that revive the player
+    revivable = {
+        CollectibleType.COLLECTIBLE_DEAD_CAT,
+        CollectibleType.COLLECTIBLE_ONE_UP,
+        CollectibleType.COLLECTIBLE_JUDAS_SHADOW,
+        CollectibleType.COLLECTIBLE_LAZARUS_RAGS,
+        CollectibleType.COLLECTIBLE_ANKH
     }
 }
 
 --[[  Initial Declarations  ]]--
-local name, version, apiVersion = "Decision Descent", "0.3.0", 1.0
+local name, version, apiVersion = "Decision Descent", "0.4.0", 1.0
 local DecisionDescent = RegisterMod(name, apiVersion)
 local fLogger = {  -- Fallback logger
     info = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][INFO] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][INFO] %s", tostring(message)))
     end,
     warning = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][WARN] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][WARN] %s", tostring(message)))
     end,
     critical = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][CRITICAL] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][CRITICAL] %s", tostring(message)))
     end,
     debug = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][DEBUG] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][DEBUG] %s", tostring(message)))
     end,
     fatal = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][FATAL] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][FATAL] %s", tostring(message)))
     end,
     log = function(message)
-        Isaac.DebugString(string.format("[Decision Descent][LOG] %s", message))
+        Isaac.DebugString(string.format("[Decision Descent][LOG] %s", tostring(message)))
     end
 }
 
@@ -361,13 +372,18 @@ function DecisionDescent.POST_NEW_ROOM()
 
     --[[  Room Checks  ]]--
     local isSupportedRoom = roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BLACK_MARKET
-
-    if currentRoom:IsFirstVisit() and levelType ~= LevelStage.STAGE5 and levelType ~= LevelStage.STAGE6 then
+    
+    if currentRoom:IsFirstVisit() then
         local generator = coroutine.create(generatePoll)
 
         if levelType == LevelStage.STAGE7 then
             -- The Void checks
             if isSupportedRoom and currentRoom:GetDeliriumDistance() > 0 then
+                coroutine.resume(generator)
+            end
+        elseif levelType == LevelStage.STAGE5 or levelType == LevelStage.STAGE6 then
+            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
+                -- Ignore Isaac/Satan boss room
                 coroutine.resume(generator)
             end
         elseif levelType == LevelStage.STAGE3_2 or (levelType == LevelStage.STAGE3_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
