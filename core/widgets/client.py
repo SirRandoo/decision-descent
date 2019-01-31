@@ -490,10 +490,11 @@ class Client(QtWidgets.QMainWindow):
         
         # Client Settings #
         c_display = settings.Setting("display", tooltip='Settings related to the visual display of the client.')
-        c_window = settings.Setting("window", tooltip='Settings related to the literal window of the client.')
         c_extensions = settings.Setting("extensions", tooltip='Settings related to the extension framework.')
         c_system = settings.Setting("system", tooltip='Settings related to Decision Descent as a whole.')
         c_s_updates = settings.Setting('updates', tooltip='Settings related to the update checker.')
+        c_window = settings.Setting("window", tooltip='Settings related to the literal window of the client.',
+                                    hidden=True)
         
         # client.display Settings #
         
