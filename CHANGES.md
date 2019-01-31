@@ -17,6 +17,8 @@
 * Help→About in the menubar now displays a generated about dialog.
 * Client position & size now persists through sessions.
 * `client.log` is now dynamically set from the application's metadata.
+* Completely restructured the client side
+* Fixed the client's log display not properly outputting messages.
 
 
 # Decision Descent v0.3.0

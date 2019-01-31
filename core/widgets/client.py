@@ -53,7 +53,7 @@ class Client(QtWidgets.QMainWindow):
     
     # These variables are assigned dynamically from the application's
     # metadata.  If you rely on these for any reason, you should adjust
-    # accordingly or directly grab the data from the application itself.
+    # accordingly or grab data directly from the application itself.
     NAME = None
     VERSION = None
     
@@ -283,13 +283,13 @@ class Client(QtWidgets.QMainWindow):
     def help(self):
         """Shows the help dialog for Decision Descent."""
         self._logger.info('Preparing help display...')
-    
+
         self._logger.warning('Help display has not been implemented yet!')
     
     def about(self):
         """Shows the about dialog for Decision Descent."""
         self._logger.info('Preparing about display...')
-    
+
         # Declarations #
         about = About()
         application = QtWidgets.QApplication.instance()
@@ -297,7 +297,7 @@ class Client(QtWidgets.QMainWindow):
         website = f'http://{domain}' if not domain.startswith('http') else domain
         repo = self.REPOSITORY.toDisplayString()
         repo = f'http://{repo}' if not repo.startswith('http') else repo
-    
+
         # Metadata #
         self._logger.info('Population about display...')
         about.name.setText(f'<a href="{repo}">{application.applicationName()}</a>')
@@ -307,7 +307,7 @@ class Client(QtWidgets.QMainWindow):
         about.website.setText(f'<a href="{website}">{domain}</a>')
         about.authors.setText(', '.join(self.AUTHORS))
         about.license.setText(self.LICENSE)
-    
+
         # Invocation #
         self._logger.info('About display prepared!')
         about.adjustSize()
@@ -435,7 +435,7 @@ class Client(QtWidgets.QMainWindow):
                 
                 if not d.isEmpty():
                     try:
-                        data = json.loads(d)
+                        data = json.loads(d.data().decode())
                     
                     except ValueError as e:
                         self._logger.warning(f'Could not decode file "{self._settings_file.fileName()}')
@@ -630,8 +630,27 @@ class Client(QtWidgets.QMainWindow):
     def closeEvent(self, event: QtGui.QCloseEvent):
         """An override to QMainWindow's closeEvent.  This event is responsible
         for performing closing operations, such as saving settings."""
-        with open('settings.json', 'w') as OUTFILE:
-            OUTFILE.write(json.dumps(self.settings.to_data()))
+        try:
+            d = json.dumps(self.settings.to_data())
+
+        except ValueError as e:
+            self._logger.warning('Settings could not be serialized!')
+            self._logger.warning(f'Reason: {e.__cause__}')
+
+        else:
+            if not self._settings_file.isOpen():
+                self._settings_file.open(QtCore.QFile.Text | QtCore.QFile.WriteOnly | QtCore.QFile.Truncate)
+    
+            if self._settings_file.isWritable():
+                self._settings_file.write(d.encode(encoding='UTF-8'))
+    
+            else:
+                self._logger.warning('Settings could not be saved!')
+                self._logger.warning(f'Reason: #{self._settings_file.error()} - {self._settings_file.errorString()}')
+
+        finally:
+            if self._settings_file.isOpen():
+                self._settings_file.close()
 
 
 # class Client_2(QtWidgets.QMainWindow):
