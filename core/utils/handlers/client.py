@@ -22,21 +22,20 @@
 # GNU General Public License along with
 # Decision Descent.  If not,
 # see <https://www.gnu.org/licenses/>.
+import functools
 import inspect
 import logging
 import typing
 
 from PyQt5 import QtGui, QtWidgets
 
-from QtUtilities.utils import should_create_widget
-
 __all__ = {"Handler"}
 
 
 class Handler(logging.Handler):
     """A custom handler for outputting logging information to a QTextBrowser."""
-    
-    def __init__(self, qtextbrowser: QtWidgets.QTextBrowser, **kwargs):
+
+    def __init__(self, promise: functools.partial, **kwargs):
         # Super Call #
         super(Handler, self).__init__()
         
@@ -47,8 +46,8 @@ class Handler(logging.Handler):
         self._error = QtGui.QColor(kwargs.get("error_color", self._warning.darker(kwargs.get("error_factor", 150))))
         self._critical = QtGui.QColor(kwargs.get("critical_color",
                                                  self._error.darker(kwargs.get("critical_factor", 150))))
-        
-        self._qtextbrowser = qtextbrowser
+
+        self._display = promise
         self._restriction = 'INFO'
     
     # Properties #
@@ -102,6 +101,12 @@ class Handler(logging.Handler):
         self._critical = QtGui.QColor(value)
     
     def emit(self, record: logging.LogRecord):
+        if callable(self._display):
+            display = self._display(None)
+        
+            if display is not None:
+                self._display = display
+        
         msg = self.format(record)
         name = record.levelname
         colors = self.colors()
@@ -113,16 +118,16 @@ class Handler(logging.Handler):
         
         else:
             msg = f'<span>{msg}</span><br/>'
-        
-        if not should_create_widget(self._qtextbrowser):
+    
+        if isinstance(self._display, QtWidgets.QTextBrowser):
             level = logging.getLevelName(name)
             restriction = getattr(logging, self._restriction, None)
             
             if restriction is not None:
                 if type(level) == int and type(restriction) == int:
                     if level >= restriction:
-                        self._qtextbrowser.append(msg)
+                        self._display.append(msg)
                 
                 elif type(level) == str and type(restriction) == str:
                     if level.lower() == restriction.lower():
-                        self._qtextbrowser.append(msg)
+                        self._display.append(msg)

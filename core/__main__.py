@@ -46,7 +46,7 @@ application.applicationDisplayNameChanged.connect(functools.partial(
 # Metadata
 application.setApplicationDisplayName("Decision Descent: Client")
 application.setApplicationName("decision-descent")
-application.setApplicationVersion("0.3.0")
+application.setApplicationVersion("0.4.0")
 application.setWindowIcon(QtGui.QIcon("resources/assets/icon.png"))
 application.setOrganizationName("SirRandoo")
 application.setOrganizationDomain("sirrandoo.github.io")
@@ -73,8 +73,11 @@ QtCore.qInstallMessageHandler(qmessage_handler)
 logging.basicConfig(
     datefmt='%H:%M:%S', style='{', level=level,
     format='[{asctime}][{levelname}][{name}][{filename}:{funcName}:{lineno}] {message}',
-    handlers=[logging.StreamHandler(), logging.FileHandler(application.applicationName() + '.log', mode='w'),
-              Handler(app.client_log)]
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(application.applicationName() + '.log', mode='w'),
+        Handler(functools.partial(getattr, app, 'client_log'))
+    ]
 )
 
 application.exec()
