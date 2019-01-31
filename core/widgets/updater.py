@@ -31,17 +31,20 @@ from PyQt5 import QtCore, QtWidgets
 from QtUtilities import requests
 from QtUtilities.utils import should_create_widget
 from QtUtilities.widgets import progress
+from utils import catchable
+
+__all__ = ['Updater']
 
 
 # noinspection PyArgumentList
-class Update(QtWidgets.QDialog):
+class Updater(QtWidgets.QDialog):
     """Displays a changelog for the specified update, and gives the
     user an option to download the update now or later."""
     logger = logging.getLogger('core.updater')
     
     def __init__(self, release_data: dict, parent: QtWidgets.QWidget = None):
         # Super Call #
-        super(Update, self).__init__(parent=parent)
+        super(Updater, self).__init__(parent=parent)
         
         # "Public" Attributes #
         self.changelog: QtWidgets.QTextBrowser = None
@@ -55,6 +58,9 @@ class Update(QtWidgets.QDialog):
         self._surrogate: QtWidgets.QWidget = None
         self._button_container: QtWidgets.QWidget = None
         self._data = release_data
+
+        # Internal Calls
+        self.prep_display()
     
     # Display Methods #
     def prep_display(self):
@@ -86,11 +92,13 @@ class Update(QtWidgets.QDialog):
             button_layout.addStretch()
             button_layout.addWidget(self.update_now)
             button_layout.addWidget(self.update_later)
+            button_layout.setContentsMargins(0, 0, 0, 0)
         
         if should_create_widget(self._surrogate):
             self._surrogate = QtWidgets.QWidget()
             
             layout = QtWidgets.QVBoxLayout(self._surrogate)
+            layout.setContentsMargins(0, 0, 0, 0)
             layout.addWidget(self.changelog)
             layout.addWidget(self._button_container)
         
@@ -107,7 +115,8 @@ class Update(QtWidgets.QDialog):
             self._stacked.setCurrentWidget(self._surrogate)
     
     # Update Methods #
-    def initialize_update(self):
+    @catchable.catchable
+    def initialize_update(self, checked: bool):
         """Starts the update sequence."""
         self.setModal(True)
         self._stacked.setCurrentWidget(self._progress_widget)
@@ -146,3 +155,18 @@ class Update(QtWidgets.QDialog):
             self.logger.warning(f'Reason: {response.error_string()}')
             self.logger.warning(f'If this problem persists, you can manually download the latest release @ '
                                 f'{self._data["html_url"]}')
+
+    def postpone_update(self):
+        pass
+
+
+if __name__ == '__main__':
+    a = QtWidgets.QApplication([])
+    u = Updater({
+        'tag_name': 'v0.3.0',
+        'zipball_url': 'https://github.com/SirRandoo/decision-descent/archive/v0.3.0.zip',
+        'html_url': 'https://github.com/sirrandoo/decision-descent'
+    })
+    
+    u.show()
+    a.exec()
