@@ -29,7 +29,6 @@ import os
 
 from PyQt5 import QtCore, QtWidgets
 
-from widgets.updater import Updater
 from ..errors import MethodMissingError, SignalMissingError
 from ..modules import remove_module_and_submodules
 
@@ -157,7 +156,7 @@ class Integration:
         """Sends `message` to the integration's supported platform(s)."""
         self._logger.info(f"Attempting to send message to {self.name}'s supported platform(s)...")
         method = getattr(self._inst, 'check_for_updates')
-    
+
         if method is not None:
             self._logger.info('Integration has a send method!')
             self._logger.info("Invoking integration's send method...")
@@ -178,25 +177,25 @@ class Integration:
             self._logger.warning(f'Integration at site {self._entry} does not have a send method!')
             raise MethodMissingError(f'Integration at site {self._entry} does not have a send method!')
 
-    def check_for_updates(self, updater: Updater):
+    def check_for_updates(self, updater):
         """Calls the extension's update checker."""
         self._logger.info(f"Attempting to call {self.name}'s update checker...")
         method = getattr(self._inst, 'check_for_updates')
-    
+
         if method is not None:
             self._logger.info('Integration has a check_for_updates method!')
             self._logger.info('Invoking integration\'s check_for_updates method...')
-        
+
             try:
                 method(updater)
-        
+
             except Exception as e:
                 self._logger.warning(f"Integration at site {self._entry}'s "
                                      f'send method failed with exception: {str(e)}')
-        
+
             else:
                 self._logger.info("Integration's check_for_updates method completed successfully!")
-    
+
         else:
             self._logger.warning(f'Integration at site {self._entry} does not have a check_for_updates method!')
             raise MethodMissingError(f'Integration at site {self._entry} does not have a check_for_updates method!')
