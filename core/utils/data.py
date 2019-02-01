@@ -161,16 +161,16 @@ class DescentData(QtCore.QObject):
         """The callable for intent "polls.delete"."""
         if identifier_or_alias == "*":
             self.logger.warning("Deleting all polls...")
-        
+
             for poll in self._polls.copy():
                 poll.instance.stop()
                 poll.instance.deleteLater()
-        
+
             self._polls.clear()
-    
+
         else:
             self.logger.warning(f'Deleting poll with choice "{identifier_or_alias}"...')
-        
+
             for index, poll in enumerate(self._polls.copy()):
                 if poll.instance.is_choice(identifier_or_alias):
                     poll.instance.stop()
@@ -231,7 +231,7 @@ class DescentData(QtCore.QObject):
         _before = len(self._polls)
         self._polls = [poll for poll in self._polls if poll.instance.active]
         difference = _before - len(self._polls)
-    
+
         if difference > 0:
             self.logger.info(f'Cleaned up {difference} polls!')
     
@@ -274,23 +274,39 @@ class DescentData(QtCore.QObject):
             color = QtGui.QColor(f'#{hud_text_alias["color"].value}')
 
         color_r, color_g, color_b, color_a = color.getRgb()
-        
-        self._http.send_message(dataclasses.Message.from_json(dict(
-            intent="state.config.update", args=[dict(
-                core=dict(maximum_choices=poll_alias["maximum_choices"].value),
-                hud=dict(
-                    enabled=hud_alias["enabled"].value,
-                    text_color=dict(r=color_r / 255, g=color_g / 255, b=color_b / 255),
-                    alpha=color_a,
-                    width=hud_text_alias["width"].value,
-                    height=hud_text_alias["height"].value),
-                debug=dict(enabled=conf_alias["debug"]["enabled"].value))
-            ])))
 
-        self._http.send_message(dataclasses.Message.from_json(dict(
-            intent="state.dimensions.update", args=[self._client.isaac_size.width(), self._client.isaac_size.height()]
-        )))
+        self._http.send_message(dataclasses.Message.from_json({
+            'intent': "state.config.update",
+            'args': [
+                {
+                    'core': {
+                        'maximum_choices': poll_alias["maximum_choices"].value
+                    },
+                    'hud': {
+                        'enabled': hud_alias["enabled"].value,
+                        'text_color': {
+                            'r': color_r / 255,
+                            'g': color_g / 255,
+                            'b': color_b / 255
+                        },
+                        'alpha': color_a,
+                        'width': hud_text_alias["width"].value, 'height': hud_text_alias["height"].value
+                    },
+                    'debug': {
+                        'enabled': conf_alias["debug"]["enabled"].value
+                    }
+                }
+            ]
+        }))
 
+        self._http.send_message(dataclasses.Message.from_json({
+            'intent': "state.dimensions.update",
+            'args': [
+                self._client.isaac_size.width(),
+                self._client.isaac_size.height()
+            ]
+        }))
+    
     @catchable.signal
     def process_poll(self, poll_id: str):
         """Processes signals from polls."""
