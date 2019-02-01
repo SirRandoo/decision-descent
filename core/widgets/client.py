@@ -35,7 +35,7 @@ from QtUtilities import requests, settings
 from QtUtilities.utils import should_create_widget
 from QtUtilities.widgets import progress
 from utils import errors
-from utils.dataclasses import Integration
+from utils.dataclasses import Extension
 from widgets import updater
 from .about import About
 
@@ -99,7 +99,7 @@ class Client(QtWidgets.QMainWindow):
         self._request_factory: requests.Factory = None
         self._settings_file = QtCore.QFile('settings.json')
         self._loggers: typing.List[logging.Logger] = list()
-        self._integrations: typing.List[Integration] = list()
+        self._extensions: typing.List[Extension] = list()
         self._updater: updater.Updater = None
         
         # Internal Calls #
@@ -306,7 +306,7 @@ class Client(QtWidgets.QMainWindow):
         about.name.setText(f'<a href="{repo}">{application.applicationName()}</a>')
         about.display_name.setText(application.applicationDisplayName())
         about.version.setText(application.applicationVersion())
-        about.integrations.setText('{0} out of {0} integrations loaded'.format(len(self._integrations)))
+        about.extensions.setText('{0} out of {0} extensions loaded'.format(len(self._extensions)))
         about.website.setText(f'<a href="{website}">{domain}</a>')
         about.authors.setText(', '.join(self.AUTHORS))
         about.license.setText(self.LICENSE)
@@ -394,8 +394,8 @@ class Client(QtWidgets.QMainWindow):
             else:
                 return
 
-        # Check for plugin updates
-        for i in self._integrations:
+        # Check for extension updates
+        for i in self._extensions:
             try:
                 i.check_for_updates(self._updater)
     
