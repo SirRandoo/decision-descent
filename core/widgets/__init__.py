@@ -25,4 +25,3 @@
 from .client import Client
 from .http import HttpListener
 from .qapplication import QApplication
-from .tray import TrayIcon
