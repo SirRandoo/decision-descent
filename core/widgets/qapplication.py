@@ -55,6 +55,7 @@ class QApplication(QtWidgets.QApplication):
         """Returns the QNetworkAccessManager all network traffic should use."""
         if self._network_manager is None:
             self._network_manager = QtNetwork.QNetworkAccessManager()
+            self._network_manager.setRedirectPolicy(QtNetwork.QNetworkRequest.NoLessSafeRedirectPolicy)
     
         return self._network_manager
 
