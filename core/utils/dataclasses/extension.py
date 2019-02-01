@@ -32,24 +32,24 @@ from PyQt5 import QtCore, QtWidgets
 from ..errors import MethodMissingError, SignalMissingError
 from ..modules import remove_module_and_submodules
 
-__all__ = ['Integration']
+__all__ = ['Extension']
 
 
 # noinspection PyBroadException
-class Integration:
-    """A wrapper class for an integration package
+class Extension:
+    """A wrapper class for an extension package
     for Decision Descent: Client.  This class should
     serve as a reference for required methods every
-    integration should provide.  Likewise, this should
+    extension should provide.  Likewise, this should
     serve as a reference for optional methods every
-    integration should provide."""
+    extension should provide."""
 
     __slots__ = ['_entry', '_inst', '_meta', '_logger', '_name', '_version']
     
     def __init__(self, entry_point: str):
         # Internal Attributes #
         self._entry = os.path.normpath(entry_point)
-        self._logger = logging.getLogger('core.integrations')
+        self._logger = logging.getLogger(f'core.extensions')
         self._inst = None
         self._name = self._entry
         self._version = (0, 1, 0)  # major.minor.patch
@@ -63,58 +63,60 @@ class Integration:
                 raise ValueError('Import paths cannot contain a space!')
         
         elif "." not in self._entry:
-            raise ValueError(f'Integration path not supported! ({self._entry})')
+            raise ValueError(f'Extension path not supported! ({self._entry})')
     
     # Metadata Properties #
     @property
     def name(self):
-        """Returns the integration's name."""
+        """Returns the extension's name."""
         return self._name
     
     @name.setter
     def name(self, value: str):
-        """Sets the integration's name."""
+        """Sets the extension's name."""
         self._name = str(value)
     
     @name.deleter
     def name(self):
-        """Deletes the custom name for the integration."""
+        """Deletes the custom name for the extension."""
         self._name = self._entry
     
     # Utility Methods #
     def load(self, *args, **kwargs):
         """Loads the integration at the entry site."""
-        self._logger.info(f'Loading integration at site {self._entry}...')
-        integration = importlib.import_module(self._entry)
+        self._logger.info(f'Loading extension at site {self._entry}...')
+        extension = importlib.import_module(self._entry)
+        construct = getattr(extension, 'construct', None)
 
-        if hasattr(integration, 'construct'):
+        if construct is not None:
             try:
-                getattr(integration, 'construct')(*args, **kwargs)
+                construct(*args, **kwargs)
             
             except Exception as e:
-                self._logger.warning(f"Integration at site {self._entry}'s "
+                self._logger.warning(f"Extension at site {self._entry}'s "
                                      f'construct method failed with exception: {str(e)}')
                 raise ValueError
             
             else:
-                self._logger.info(f'Integration "{self.name}"\'s construct method completed successfully!')
+                self._logger.info(f'Extension "{self.name}"\'s construct method completed successfully!')
         
         else:
-            remove_module_and_submodules(integration)
-            del integration
-            raise MethodMissingError(f'Integration at site {self.name} is missing a construct method!')
-        
-        self._logger.info(f'Integration "{self.name}" successfully loaded!')
+            remove_module_and_submodules(extension)
+            del extension
+            raise MethodMissingError(f'Extension at site {self.name} is missing a construct method!')
+
+        self._logger.info(f'Extension "{self.name}" successfully loaded!')
     
     def unload(self, *args, **kwargs):
-        """Unloads the integration at the entry site."""
-        self._logger.info(f'Unloading integration at site {self._entry}')
-
-        if hasattr(self._inst, 'destruct'):
+        """Unloads the extension at the entry site."""
+        self._logger.info(f'Unloading extension at site {self._entry}')
+        destruct = getattr(self._inst, 'destruct', None)
+    
+        if destruct is not None:
             self._logger.info(f"Calling {self.name}'s destruct method...")
             
             try:
-                getattr(self._inst, 'destruct')(*args, **kwargs)
+                destruct(*args, **kwargs)
             
             except Exception as e:
                 self._logger.warning(f"{self.name}'s destruction method failed with exception: {str(e)}")
@@ -131,19 +133,19 @@ class Integration:
         
         self._cleanup(self._inst)
         self._inst = None
-
-        self._logger.info(f'Integration at site {self._entry} unloaded successfully!')
+    
+        self._logger.info(f'Extension at site {self._entry} unloaded successfully!')
     
     def _cleanup(self, obj):
         """Cleans up an instance's Qt objects."""
-        self._logger.info('Cleaning up integration...')
+        self._logger.info('Cleaning up extension...')
         
         for attr, attr_inst in inspect.getmembers(obj):
             if isinstance(attr_inst, QtCore.QObject) or isinstance(attr_inst, QtWidgets.QWidget):
                 self._cleanup(attr_inst)
 
-                stop = getattr(attr_inst, 'stop')
-                delete_later = getattr(attr_inst, 'deleteLater')
+                stop = getattr(attr_inst, 'stop', None)
+                delete_later = getattr(attr_inst, 'deleteLater', None)
 
                 if stop is not None:
                     stop()
@@ -153,66 +155,66 @@ class Integration:
     
     # Wrapper Methods #
     def send(self, message: str) -> bool:
-        """Sends `message` to the integration's supported platform(s)."""
+        """Sends `message` to the extension's supported platform(s)."""
         self._logger.info(f"Attempting to send message to {self.name}'s supported platform(s)...")
-        method = getattr(self._inst, 'check_for_updates')
+        method = getattr(self._inst, 'check_for_updates', None)
 
         if method is not None:
-            self._logger.info('Integration has a send method!')
-            self._logger.info("Invoking integration's send method...")
+            self._logger.info('Extension has a send method!')
+            self._logger.info("Invoking extension's send method...")
             
             try:
                 method(message)
             
             except Exception as e:
-                self._logger.warning(f"Integration at site {self._entry}'s "
+                self._logger.warning(f"Extension at site {self._entry}'s "
                                      f'send method failed with exception: {str(e)}')
                 return False
             
             else:
-                self._logger.info("Integration's send method completed successfully!")
+                self._logger.info("Extension's send method completed successfully!")
                 return True
         
         else:
-            self._logger.warning(f'Integration at site {self._entry} does not have a send method!')
-            raise MethodMissingError(f'Integration at site {self._entry} does not have a send method!')
+            self._logger.warning(f'Extension at site {self._entry} does not have a send method!')
+            raise MethodMissingError(f'Extension at site {self._entry} does not have a send method!')
 
     def check_for_updates(self, updater):
         """Calls the extension's update checker."""
         self._logger.info(f"Attempting to call {self.name}'s update checker...")
-        method = getattr(self._inst, 'check_for_updates')
+        method = getattr(self._inst, 'check_for_updates', None)
 
         if method is not None:
-            self._logger.info('Integration has a check_for_updates method!')
-            self._logger.info('Invoking integration\'s check_for_updates method...')
+            self._logger.info('Extension has a check_for_updates method!')
+            self._logger.info("Invoking extension's check_for_updates method...")
 
             try:
                 method(updater)
 
             except Exception as e:
-                self._logger.warning(f"Integration at site {self._entry}'s "
+                self._logger.warning(f"Extension at site {self._entry}'s "
                                      f'send method failed with exception: {str(e)}')
 
             else:
-                self._logger.info("Integration's check_for_updates method completed successfully!")
+                self._logger.info("Extension's check_for_updates method completed successfully!")
 
         else:
-            self._logger.warning(f'Integration at site {self._entry} does not have a check_for_updates method!')
-            raise MethodMissingError(f'Integration at site {self._entry} does not have a check_for_updates method!')
+            self._logger.warning(f'Extension at site {self._entry} does not have a check_for_updates method!')
+            raise MethodMissingError(f'Extension at site {self._entry} does not have a check_for_updates method!')
     
     # Wrapper Signals #
     @property
     def on_message(self) -> QtCore.pyqtSignal:
-        """Returns the integration's on_message signal."""
-        method = getattr(self._inst, 'on_message')
+        """Returns the extension's on_message signal."""
+        method = getattr(self._inst, 'on_message', None)
 
         if method is not None:
             if isinstance(method, QtCore.pyqtSignal):
                 return method
             
             else:
-                raise TypeError(f"Integration at site {self._entry}'s "
+                raise TypeError(f"Extension at site {self._entry}'s "
                                 f'on_message attribute is not a valid signal object!')
         
         else:
-            raise SignalMissingError(f'Integration at site {self._entry} does not have an on_message attribute!')
+            raise SignalMissingError(f'Extension at site {self._entry} does not have an on_message attribute!')

@@ -24,70 +24,60 @@
 # see <https://www.gnu.org/licenses/>.
 
 
-__all__ = {"MethodMissingError", "DependencyError", "IntegrationError", "IntegrationInvokeError",
-           "IntegrationLoadError", "IntegrationUnloadError", "ModError", "ModInitError", "ModPostInitError",
+__all__ = {"MethodMissingError", "DependencyError", "ExtensionError", "ExtensionInvokeError",
+           "ExtensionLoadError", "IntegrationUnloadError", "ModError", "ModInitError", "ModPostInitError",
            "ModPreInitError", "SignalMissingError"}
 
 
 #  Generic Exceptions  #
 class ModError(Exception):
-    """The 'generic' exception for any mod-related
-    errors.  This shouldn't be used if a more
-    specific error is available."""
+    """The 'generic' exception for any mod-related errors.  This shouldn't be
+    used if a more specific error is available."""
 
 
-class IntegrationError(Exception):
-    """The 'generic' exception for any integration-
-    related errors.  This shouldn't be used if a
-    more specific error is available."""
+class ExtensionError(Exception):
+    """The 'generic' exception for any extension- related errors.  This
+    shouldn't be used if a more specific error is available."""
 
 
 class DependencyError(Exception):
-    """Raised when a required dependency wasn't
-    present in the Python environment.  Generally
-    if you receive this error, you should run the
-    installer again.  If the installer doesn't
-    install the dependency, you will be shown which
-    dependency is missing and can manually add it."""
+    """Raised when a required dependency wasn't present in the Python
+    environment.  Generally if you receive this error, you should run the
+    installer again.  If the installer doesn't install the dependency, you will
+    be shown which dependency is missing and can manually add it."""
 
 
 #  Mod Exceptions  #
 class ModPreInitError(ModError):
-    """Raised when the mod encountered an error
-    during the pre-init phase."""
+    """Raised when the mod encountered an error during the pre-init phase."""
 
 
 class ModInitError(ModError):
-    """Raised when the mod encountered an error
-    during the init phase."""
+    """Raised when the mod encountered an error during the init phase."""
 
 
 class ModPostInitError(ModError):
-    """Raised when the mod encountered an error
-    during the post-init phase."""
+    """Raised when the mod encountered an error during the post-init phase."""
 
 
 #  Integration Exceptions  #
-class IntegrationLoadError(IntegrationError):
-    """Raised when an integration failed to load."""
+class ExtensionLoadError(ExtensionError):
+    """Raised when an extension failed to load."""
 
 
-class IntegrationUnloadError(IntegrationError):
-    """Raised when an integration failed to unload
-    properly.  The mod will attempt to aggressively
-    clean up artifacts."""
+class IntegrationUnloadError(ExtensionError):
+    """Raised when an extension failed to unload properly.  The mod will
+    attempt to aggressively clean up artifacts."""
 
 
-class IntegrationInvokeError(IntegrationError):
-    """Raised when the mod invoked an integration's
-    method and an exception was raised."""
+class ExtensionInvokeError(ExtensionError):
+    """Raised when the mod invoked an extension's method and an exception was
+    raised."""
 
 
-class SignalMissingError(IntegrationError):
-    """Raised when an integration is missing a
-    required signal."""
+class SignalMissingError(ExtensionError):
+    """Raised when an extension is missing a required signal."""
 
 
-class MethodMissingError(IntegrationError):
-    """Raised when an integration is missing a
-    required method."""
+class MethodMissingError(ExtensionError):
+    """Raised when an extension is missing a required method."""

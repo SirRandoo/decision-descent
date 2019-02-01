@@ -38,7 +38,7 @@ class About(QtWidgets.QDialog):
         self.name: QtWidgets.QLabel = None
         self.display_name: QtWidgets.QLabel = None
         self.version: QtWidgets.QLabel = None
-        self.integrations: QtWidgets.QLabel = None
+        self.extensions: QtWidgets.QLabel = None
         self.authors: QtWidgets.QLabel = None
         self.website: QtWidgets.QLabel = None
         self.license: QtWidgets.QLabel = None
@@ -61,9 +61,9 @@ class About(QtWidgets.QDialog):
         
         if should_create_widget(self.version):
             self.version = QtWidgets.QLabel()
-        
-        if should_create_widget(self.integrations):
-            self.integrations = QtWidgets.QLabel()
+
+        if should_create_widget(self.extensions):
+            self.extensions = QtWidgets.QLabel()
         
         if should_create_widget(self.authors):
             self.authors = QtWidgets.QLabel()
@@ -90,7 +90,7 @@ class About(QtWidgets.QDialog):
         layout.addRow('Authors', self.authors)
         layout.addRow('License', self.license)
         layout.addRow('Website', self.website)
-        layout.addRow('Integrations', self.integrations)
+        layout.addRow('Extensions', self.extensions)
         layout.addRow('Qt Version', self.qt_version)
         layout.addRow('PyQt Version', self.pyqt_version)
         

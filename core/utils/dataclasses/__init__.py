@@ -21,7 +21,7 @@
 #
 #  Author: RandomShovel
 #  File Creation Date: 7/20/2017
-from .integration import Integration
+from .extension import Extension
 from .layout import RoomLayout
 from .message import Message
 from .player import Player

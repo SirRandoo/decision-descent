@@ -1,26 +1,27 @@
-#  This file is part of Decision Descent: Client.
+# This file is part of Decision Descent.
 #
-#  Decision Descent: Client is free software: you can
-#  redistribute it and/or modify it under the
-#  terms of the GNU General Public License as
-#  published by the Free Software Foundation,
-#  either version 3 of the License, or (at
-#  your option) any later version.
+# Decision Descent is free software:
+# you can redistribute it
+# and/or modify it under the
+# terms of the GNU General
+# Public License as published by
+# the Free Software Foundation,
+# either version 3 of the License,
+# or (at your option) any later
+# version.
 #
-#  Decision Descent: Client is distributed in the hope
-#  that it will be useful, but WITHOUT ANY
-#  WARRANTY; without even the implied warranty
-#  of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-#  PURPOSE.  See the GNU General Public License
-#  for more details.
+# Decision Descent is distributed in
+# the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without
+# even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
 #
-#  You should have received a copy of the GNU
-#  General Public License along with
-#  Decision Descent: Client.  If not,
-#  see <http://www.gnu.org/licenses/>.
-#
-#  Author: RandomShovel
-#  File Creation Date: 7/18/2017
+# You should have received a copy of the
+# GNU General Public License along with
+# Decision Descent.  If not,
+# see <https://www.gnu.org/licenses/>.
 import logging
 import traceback
 
@@ -32,8 +33,7 @@ from .configs import token
 
 
 class Twitch(QtWidgets.QDialog):
-    """Represents the Twitch integration for
-    Decision Descent: Client"""
+    """Represents the Twitch extension for Decision Descent: Client"""
     __slots__ = ("_quitting", "config", "ui")
     
     def __init__(self, parent=None, client=None):
@@ -42,7 +42,7 @@ class Twitch(QtWidgets.QDialog):
         super(Twitch, self).__init__(parent=parent)
         
         # Public Attributes #
-        self.logger = logging.getLogger("integrations.twitch")
+        self.logger = logging.getLogger("extensions.twitch")
         
         #  Internal attributes  #
         self._quitting = False
