@@ -442,7 +442,24 @@ class Updater(QtWidgets.QDialog):
                         os.unlink(d_path)
                 
                     shutil.copy(f_path, d_path)
+
+            if identifier in context['core']:
+                if os.path.exists('mod'):
+                    home = QtCore.QDir.home()
+                    home.cd('Documents')
         
+                    if not home.exists('My Games'):
+                        home.mkdir('My Games')
+        
+                    home.cd('My Games')
+        
+                    if not home.exists('Binding of Isaac Afterbirth+ Mods'):
+                        home.mkdir('Binding of Isaac Afterbirth+ Mods')
+        
+                    home.cd('Binding of Isaac Afterbirth+ Mods')
+        
+                    shutil.move('mod', home.filePath('Decision Descent'))
+                    
             item.setText(f'(Installed) {identifier}')
             item.setIcon(context['assets']['succeeded'])
 
