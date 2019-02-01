@@ -25,6 +25,8 @@
 # TODO: If the user chooses to download the update later, insert a QAction into the menubar.
 # TODO: Possibly parse markdown into html
 import logging
+import typing
+from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -33,7 +35,9 @@ from QtUtilities.utils import should_create_widget
 from QtUtilities.widgets import progress
 from utils import catchable
 
-__all__ = ['Updater']
+__all__ = ['Updater', 'ReleaseData']
+
+ReleaseData = namedtuple('ReleaseData', ['name', 'zip_url', 'website'])
 
 
 # noinspection PyArgumentList
@@ -41,8 +45,8 @@ class Updater(QtWidgets.QDialog):
     """Displays a changelog for the specified update, and gives the
     user an option to download the update now or later."""
     logger = logging.getLogger('core.updater')
-    
-    def __init__(self, release_data: dict, parent: QtWidgets.QWidget = None):
+
+    def __init__(self, core: ReleaseData = None, parent: QtWidgets.QWidget = None):
         # Super Call #
         super(Updater, self).__init__(parent=parent)
         
@@ -57,10 +61,27 @@ class Updater(QtWidgets.QDialog):
         self._stacked: QtWidgets.QStackedWidget = None
         self._surrogate: QtWidgets.QWidget = None
         self._button_container: QtWidgets.QWidget = None
-        self._data = release_data
-
+        self._data: typing.Dict[str, ReleaseData] = {'core': core}
+        
         # Internal Calls
         self.prep_display()
+
+    # Data Methods
+    def add_data(self, identifier: str, data: ReleaseData):
+        """Adds another file to the updater."""
+        if identifier.lower() in self._data:
+            raise KeyError(f'Identifier "{identifier}" already exists!')
+    
+        else:
+            self._data[identifier.lower()] = data
+
+    def remove_data(self, identifier: str):
+        """Removes a file from the updater."""
+        if identifier.lower() not in self._data:
+            raise KeyError(f'Identifier "{identifier}" does not exist!')
+    
+        else:
+            del self._data[identifier.lower()]
     
     # Display Methods #
     def prep_display(self):
@@ -158,15 +179,3 @@ class Updater(QtWidgets.QDialog):
 
     def postpone_update(self):
         pass
-
-
-if __name__ == '__main__':
-    a = QtWidgets.QApplication([])
-    u = Updater({
-        'tag_name': 'v0.3.0',
-        'zipball_url': 'https://github.com/SirRandoo/decision-descent/archive/v0.3.0.zip',
-        'html_url': 'https://github.com/sirrandoo/decision-descent'
-    })
-    
-    u.show()
-    a.exec()
