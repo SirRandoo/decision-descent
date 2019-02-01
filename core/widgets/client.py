@@ -27,14 +27,16 @@ import inspect
 import json
 import logging
 import typing
-from distutils import version
+from distutils.version import StrictVersion
 
 from PyQt5 import QtCore, QtGui, QtHelp, QtNetwork, QtWidgets
 
 from QtUtilities import requests, settings
 from QtUtilities.utils import should_create_widget
 from QtUtilities.widgets import progress
+from utils import errors
 from utils.dataclasses import Integration
+from widgets import updater
 from .about import About
 
 __all__ = ['Client']
@@ -98,6 +100,7 @@ class Client(QtWidgets.QMainWindow):
         self._settings_file = QtCore.QFile('settings.json')
         self._loggers: typing.List[logging.Logger] = list()
         self._integrations: typing.List[Integration] = list()
+        self._updater: updater.Updater = None
         
         # Internal Calls #
         # noinspection PyTypeChecker
@@ -137,7 +140,7 @@ class Client(QtWidgets.QMainWindow):
         self.setDocumentMode(True)
         
         if should_create_widget(self.menu_bar):
-            self.menu_bar = QtWidgets.QMenuBar()
+            self.menu_bar = self.menuBar()
             self.menu_bar.setNativeMenuBar(True)
             
             self.setMenuBar(self.menu_bar)
@@ -315,114 +318,107 @@ class Client(QtWidgets.QMainWindow):
     
     def check_for_updates(self, *, automatic: bool = None):
         """Checks for new updates to dependencies, the mod, and extensions."""
-        if automatic is None:
-            automatic = False
-        
-        self._logger.info('Preparing update checker...')
-        
-        self._logger.info('Gathering application metadata...')
-        application = QtWidgets.QApplication.instance()
-        app_version = version.StrictVersion(application.applicationVersion())
-        stable_only = self.settings['client']['system']['updates']['stable_only'].value
-        
-        self._logger.info('Checking for updates...')
-        
-        if self.REPOSITORY.host() == 'github.com':
-            path: str = self.REPOSITORY.path().lstrip('/')
-            repo_owner, repo_slug, *_ = path.split('/')
-            
-            self._logger.debug('Pinging Github...')
-            response = self._request_factory.get(f'https://api.github.com/repos/{repo_owner}/{repo_slug}/tags',
-                                                 headers={'Accept': 'application/vnd.github.v3+json'})
-            
-            if response.is_ok():
-                self._logger.debug('Decoding content...')
-                
-                try:
-                    content = response.json()
-                
-                except ValueError:
-                    self._logger.warning('Could not decode response! Is it valid JSON?')
-                
-                else:
-                    self._logger.debug('Content decoded!')
-                    
-                    if len(content) > 0:
-                        self._logger.debug('There are {} releases of {}'.format(len(content), self.NAME))
-                        
-                        for release in content:
-                            prerelease = release.get('prerelease', False)
-                            
-                            if prerelease and not stable_only:
-                                if version.StrictVersion(release['name'].lstrip('v')) > app_version:
-                                    markdown_response = self._request_factory.post('https://api.github.com/markdown',
-                                                                                   params={
-                                                                                       'text': release['body'],
-                                                                                       'mode': 'gfm',
-                                                                                       'context': f'{repo_owner}/'
-                                                                                       f'{repo_slug}'
-                                                                                   })
-                                    
-                                    if markdown_response.is_ok():
-                                        pass
-                                
-                                else:
-                                    if not automatic:
-                                        info_dialog = QtWidgets.QMessageBox(
-                                            QtWidgets.QMessageBox.Information,
-                                            'Update Checker',
-                                            f'You are on the most recent version of {self.NAME}',
-                                            QtWidgets.QMessageBox.Ok,
-                                            self
-                                        )
-                                        
-                                        info_dialog.exec()
-                                    
-                                    else:
-                                        self._logger.info(f'This is the most recent version of {self.NAME}')
-                                
-                                break  # End after the first pre-release
-                            
-                            elif not prerelease:
-                                if version.StrictVersion(release['name'].lstrip('v')) > app_version:
-                                    pass  # Show changelog
-                                
-                                else:
-                                    if not automatic:
-                                        info_dialog = QtWidgets.QMessageBox(
-                                            QtWidgets.QMessageBox.Information,
-                                            'Update Checker',
-                                            f'You are on the most recent version of {self.NAME}',
-                                            QtWidgets.QMessageBox.Ok,
-                                            self
-                                        )
-                                        
-                                        info_dialog.exec()
-                                    
-                                    else:
-                                        self._logger.info(f'This is the most recent version of {self.NAME}')
-                                
-                                break  # End after the first stable release
-                    
-                    else:
-                        self._logger.warning('There are no releases!')
-            
-            else:
-                self._logger.warning(f'Could not fetch versions from Github!')
-                self._logger.warning(f'Reason: {response.error_string()}')
-                
-                if response.error_code() == QtNetwork.QNetworkReply.ContentAccessDenied:
-                    self._logger.warning('Possible reasons:')
-                    self._logger.warning('The update checker does not support private repositories.')
-                    self._logger.warning('You have exceeded your maximum number of requests per hour.')
-                    self._logger.warning('If it is the latter, you can try again in an hour.')
-        
-        else:
-            # Since we don't know what the API for anything other than Github is
+        # Declarations
+        app = QtWidgets.QApplication.instance()
+        ver = StrictVersion(app.applicationVersion())
+        stable = self.settings['client']['system']['updates']['stable_only'].value
+        self._updater = updater.Updater()
+
+        # Host check
+        if self.REPOSITORY.host() != 'github.com':
             self._logger.warning(f'Unsupported host "{self.REPOSITORY.host()}"!')
-            self._logger.warning(f'To enable update checks, please ask the maintainers of {self.NAME} to add '
-                                 f'support for their host.')
+            self._logger.warning(f'To enable update checks, please ask the maintainers of {self.NAME} to add support '
+                                 f'for their host.')
     
+            return self.statusBar().showMessage(f'Unsupported host "{self.REPOSITORY.host()}"!', 5 * 1000)
+
+        # Get version info
+        self._logger.info('Checking for updates...')
+        h_path: str = self.REPOSITORY.path().lstrip('/')
+        owner, slug, *_ = h_path.split('/')
+
+        # Check for Decision Descent updates
+        r = self._request_factory.get(f'https://api.github.com/repos/{owner}/{slug}/releases',
+                                      headers={'Accept': 'application/vnd.github.v3+json'})
+
+        if not r.is_ok():
+            self._logger.warning('Version check failed!')
+            self._logger.warning(f'Reason: #{r.error_code()} - {r.error_string()}')
+    
+            if r.error_code() == QtNetwork.QNetworkReply.ContentAccessDenied:
+                self._logger.warning("The version checker could've failed for because of...")
+                self._logger.warning('Too many requests were sent within this hour.')
+                self._logger.warning('The repository is private, which requires authentication.')
+    
+            return
+
+        else:
+            try:
+                content = r.json()
+    
+            except ValueError:
+                self._logger.warning('Version check failed!')
+                self._logger.warning('GitHub sent an invalid response!')
+                return
+
+        # Version check
+        if not content:
+            return self.statusBar().showMessage('There are no releases yet!', 5 * 1000)
+
+        for release in content:
+            is_pre = release.get('prerelease', False)
+            r_ver = StrictVersion(release['tag_name'].lstrip('v'))
+    
+            if (is_pre and not stable) and r_ver > ver:
+                self._updater.add_release(
+                    identifier=app.applicationName(),
+                    data=updater.ReleaseData(
+                        zip=release['zipball_url'],
+                        changelog=release['body']
+                    )
+                )
+        
+                break
+    
+            elif r_ver > ver:
+                self._updater.add_release(
+                    identifier=app.applicationName(),
+                    data=updater.ReleaseData(
+                        zip=release['zipball_url'],
+                        changelog=release['body']
+                    )
+                )
+        
+                break
+    
+            else:
+                return
+
+        # Check for plugin updates
+        for i in self._integrations:
+            try:
+                i.check_for_updates(self._updater)
+    
+            except errors.MethodMissingError:
+                pass  # The error has already been logged
+
+        if self._updater.has_pending_releases():
+            self._updater.show()
+
+        elif not automatic:
+            i_dialog = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Information,
+                'Update Checker',
+                f"You're all up to date!",
+                QtWidgets.QMessageBox.Ok,
+                self
+            )
+    
+            i_dialog.exec()
+
+        else:
+            self._logger.info('All up to date!')
+            
     # Settings Methods #
     def load_settings(self):
         """Loads the client's settings."""
@@ -641,10 +637,10 @@ class Client(QtWidgets.QMainWindow):
         else:
             if not self._settings_file.isOpen():
                 self._settings_file.open(QtCore.QFile.Text | QtCore.QFile.WriteOnly | QtCore.QFile.Truncate)
-    
+
             if self._settings_file.isWritable():
                 self._settings_file.write(d.encode(encoding='UTF-8'))
-    
+
             else:
                 self._logger.warning('Settings could not be saved!')
                 self._logger.warning(f'Reason: #{self._settings_file.error()} - {self._settings_file.errorString()}')
