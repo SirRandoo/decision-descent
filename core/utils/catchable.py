@@ -22,19 +22,28 @@
 # the GNU General Public License along
 # with Decision Descent.
 # If not, see <http://www.gnu.org/licenses/>.
+import inspect
 import traceback
 import typing
 
-__all__ = {"catchable"}
+__all__ = ['signal']
 
 
-def catchable(func: typing.Callable):
+def signal(func: typing.Callable):
     """A custom decorator to catch exceptions that may
     originate from decorated methods."""
     
     def decorator(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            sig = inspect.signature(func)
+    
+            if sig.parameters:
+                args = args[:len(sig.parameters)]
+        
+                return func(*args, **kwargs)
+    
+            else:
+                return func()
         
         except:
             traceback.print_exc()

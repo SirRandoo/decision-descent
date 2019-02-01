@@ -142,21 +142,21 @@ class DescentData(QtCore.QObject):
             raise IndexError
 
     #
-    @catchable.catchable
+    @catchable.signal
     def polls_create(self, intent: str, *choices: str, **aliases):
         """The callable for intent "polls.create"."""
         tmp_ipoll = self.register_poll(intent, *choices, **aliases)
         tmp_ipoll.start(self._config["isaac"]["core"]["polls"]["duration"].value)
         self.on_poll_created.emit(tmp_ipoll)
 
-    @catchable.catchable
+    @catchable.signal
     def polls_multi_create(self, intent: str, *choices: str, **aliases):
         """The callable for intent "polls.multi.create"."""
         tmp_impoll = self.register_multi_poll(intent, *choices, **aliases)
         tmp_impoll.start(self._config["isaac"]["core"]["polls"]["duration"].value)
         self.on_poll_created.emit(tmp_impoll)
 
-    @catchable.catchable
+    @catchable.signal
     def polls_delete(self, identifier_or_alias: str):
         """The callable for intent "polls.delete"."""
         if identifier_or_alias == "*":
@@ -179,7 +179,7 @@ class DescentData(QtCore.QObject):
                     break
     
     # Poll Methods #
-    @catchable.catchable
+    @catchable.signal
     def register_poll(self, intent: str, *choices: str, **aliases) -> dataclasses.Poll:
         """Registers a poll to the internal poll cache."""
         if aliases is None:
@@ -200,7 +200,7 @@ class DescentData(QtCore.QObject):
 
         return tmp_rpoll
 
-    @catchable.catchable
+    @catchable.signal
     def register_multi_poll(self, intent: str, *choices: str, **aliases) -> dataclasses.Poll:
         """Registers a multiple choice poll."""
         tmp_rmpoll = self.register_poll(intent, *choices, **aliases)
@@ -225,7 +225,7 @@ class DescentData(QtCore.QObject):
         """Returns all polls this class manages."""
         return self._polls
 
-    @catchable.catchable
+    @catchable.signal
     def unregister_closed_polls(self):
         """Cleans up spent polls."""
         _before = len(self._polls)
@@ -236,7 +236,7 @@ class DescentData(QtCore.QObject):
             self.logger.info(f'Cleaned up {difference} polls!')
     
     # Slots #
-    @catchable.catchable
+    @catchable.signal
     def process_message(self, message: dataclasses.Message):
         """Processes messages from the Lua half."""
         self.logger.info(f'Invoking callable "{message.intent}"...')
@@ -257,7 +257,7 @@ class DescentData(QtCore.QObject):
                 elif response is not None:
                     self._http.send_message(dataclasses.Message(message.reply, [response], dict()))
 
-    @catchable.catchable
+    @catchable.signal
     def process_new_connection(self):
         """Invoked when the HTTP listener receives a new connection."""
         self.logger.info("Sending config to Isaac...")
@@ -291,7 +291,7 @@ class DescentData(QtCore.QObject):
             intent="state.dimensions.update", args=[self._client.isaac_size.width(), self._client.isaac_size.height()]
         )))
 
-    @catchable.catchable
+    @catchable.signal
     def process_poll(self, poll_id: str):
         """Processes signals from polls."""
         poll = self.get_poll(poll_id)
