@@ -26,6 +26,7 @@
 import logging
 import os
 import shutil
+import string
 import sys
 import traceback
 import typing
@@ -473,8 +474,7 @@ class Updater(QtWidgets.QDialog):
 
     def adjust_list_width(self):
         """Invoked when a new item gets added through this class."""
-        max_text = ''
-        min_text = 'abcdefghijklmnopqrstuvwxyz'
+        max_text, min_text = '', string.ascii_lowercase
     
         # Get longest identifier
         for identifier in list(self._releases.keys()):
