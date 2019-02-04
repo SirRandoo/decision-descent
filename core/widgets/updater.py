@@ -491,16 +491,3 @@ class Updater(QtWidgets.QDialog):
     
         self._update_list.setMinimumWidth(min_width)
         self._update_list.setMaximumWidth(max_width)
-
-
-if __name__ == '__main__':
-    a = QtWidgets.QApplication([])
-    a.setStyle('fusion')
-    
-    a.setApplicationName('decision-descent')
-    a.setApplicationDisplayName('Decision Descent')
-    
-    u = Updater()
-    u.show()
-    
-    a.exec()
