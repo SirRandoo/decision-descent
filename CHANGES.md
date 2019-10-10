@@ -1,3 +1,11 @@
+# Decision Descent v0.5.0
+
+* A complete rewrite of the mod to use [ShovelBot](https://github.com/sirrandoo/shovelbot) instead of reimplementing the same framework.
+* Implemented a scheduler for the lua side to hopefully ensure everything doesn't break
+* Added docstrings to most, if not all, objects in the lua side.
+* Changed the mod's metadata.xml file to reflect its actual version
+
+
 # Decision Descent v0.4.0
 
 * Client now properly calls its quit method instead of the application's exit method.
@@ -19,6 +27,28 @@
 * `client.log` is now dynamically set from the application's metadata.
 * Completely restructured the client side
 * Fixed the client's log display not properly outputting messages.
+* Reformatted various files to follow PEP8 standards
+* Hid window related settings from the settings dialog
+* The README file now references the proper file
+* Updated the LICENSE file
+* Renamed `update.py` to `updater.py`
+* Fixed the padding in the updater widget
+* Force call `prep_display` during initialization
+* Converted quotes to apostrophes in various files
+* Switched from hasattr to getattr
+* Extended update checks to integrations
+* Improved the catchable decorators
+* Enabled redirects in the application's network manager
+* Revamped the updater to properly display the various stages it can be in
+* Rebranded `integrations` to `extensions`
+* Moved away from dict constructors
+* Removed `widets/uis`
+* Shortened the mod variable in `main.lua` to `Descent`
+* Scrapped the fallback logger in `main.lua` in favor of a single `fatal` function
+* Moved away from the `DDLog` alias in favor of `Descent.logger`
+* The `Extension` dataclass now uses the `dataclasses` module
+* The error messages in the mod are now more detailed
+* Moved the `extensions` folder from the `core` directory to the root directory
 
 
 # Decision Descent v0.3.0

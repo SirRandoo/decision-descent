@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
+    <!-- The identifier of the mod -->
     <name>Decision Descent</name>
-    <directory>decision-descent</directory>
+    
+    <!-- The directory the mod will *hopefully* be placed in -->
+    <directory>DescentIsaac</directory>
+    
+    <!-- The workshop ID of the mod -->
     <id>0</id>
-    <description>Choice chamber, but for Isaac!</description>
-    <version>0.4.0</version>
+    
+    <!-- The description of the mod -->
+    <description>Allow chat to decide what happens in your game!</description>
+    
+    <!-- The version of the mod -->
+    <version>2.0.0</version>
+    
+    <!-- The visibility of the mod -->
     <visibility>Public</visibility>
+    
+    <!-- The various tags of the mod -->
     <tag id="Lua"/>
     <tag id="Tweaks"/>
 </metadata>

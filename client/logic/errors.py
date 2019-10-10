@@ -22,8 +22,17 @@
 # GNU General Public License along with
 # Decision Descent.  If not,
 # see <https://www.gnu.org/licenses/>.
-from .twitch import Twitch
 
 
-def construct(client):
-    return Twitch(client, client)
+class DescentError(Exception):
+    """The base class for all Decision Descent exceptions."""
+
+
+class IntentNotFoundError(KeyError):
+    """The intent requested was not registered with the arbiter."""
+
+
+class IntentExistsError(KeyError):
+    """The intent requested was already registered to the arbiter.
+    
+    Overriding intents should only be done if you know what you're doing."""

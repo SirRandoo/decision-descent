@@ -1,54 +1,123 @@
--------------------------------------------------
--- This file is part of Decision Descent.      --
---                                             --
--- Decision Descent is free software: you can  --
--- redistribute it and/or modify it under the  --
--- terms of the GNU General Public License as  --
--- published by the Free Software Foundation,  --
--- either version 3 of the License, or (at     --
--- your option) any later version.             --
---                                             --
--- Decision Descent is distributed in the      --
--- hope that it will be useful, but WITHOUT    --
--- ANY WARRANTY; without even the implied      --
--- warranty of MERCHANTABILITY or FITNESS FOR  --
--- A PARTICULAR PURPOSE.  See the GNU General  --
--- Public License for more details.            --
---                                             --
--- You should have received a copy of the GNU  --
--- General Public License along with Decision  --
--- Descent.                                    --
--- If not, see <http://www.gnu.org/licenses/>. --
--------------------------------------------------
+------------------------------------------------
+-- This file is part of Decision Descent.
+--
+-- Decision Descent is free software:
+-- you can redistribute it
+-- and/or modify it under the
+-- terms of the GNU General
+-- Public License as published by
+-- the Free Software Foundation,
+-- either version 3 of the License,
+-- or (at your option) any later
+-- version.
+--
+-- Decision Descent is distributed in
+-- the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without
+-- even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A
+-- PARTICULAR PURPOSE.  See the GNU
+-- General Public License for more details.
+--
+-- You should have received a copy of the
+-- GNU General Public License along with
+-- Decision Descent.  If not,
+-- see <https://www.gnu.org/licenses/>.
+------------------------------------------------
 
+---@class Task
+local Task = {}
+Task.__index = {}
 
---[[ Declarations  ]]--
-local returnable = {}
-
-
---[[  Definitions  ]]--
-function returnable.new()
-    local obj = {}
-    setmetatable(obj, returnable)
-    
-    obj.tasks = {}
-    
-    return obj
+---
+--- Creates a new task
+---
+---@param f function  @The function to call
+---@param p boolean  @An indicator that this task should rejoin the queue once the function has been called.
+---@return Task
+function Task.new(f, p)
+    return setmetatable({ func = f, persist = p, __call = f, __newindex = function() end }, Task)
 end
 
-function returnable:schedule(func, keepAlive) table.insert(self.tasks, { ["func"] = func, ["keepAlive"] = keepAlive }) end
+---
+--- Whether or not the task should be revived.
+---
+---@return boolean
+function Task:revivable() return p end
 
-function returnable:invoke()
-    local task = self.tasks[1]
+---
+--- Schedulers are responsible for managing methods that should be called away
+--- from the main thread.  Methods that do not request a revival will be removed
+--- from the task list.
+---
+---@class Scheduler
+---@field tasks Task[]
+---@field thread thread
+---@field running boolean
+local Scheduler = {}
+Scheduler.__index = Scheduler
+
+---
+--- Creates a new scheduler.
+---
+---@return Scheduler
+function Scheduler.new()
+    return setmetatable(
+            {
+                tasks = {},
+                thread = nil,
+                running = false
+            },
+            Scheduler
+    )
+end
+
+---
+--- Schedules a function to be run in the coroutine system.
+---
+---@param f function
+---@param revive boolean  @Whether or not the function should be re-queued when it finishes executing.
+function Scheduler:schedule(f, revive)
+    if type(f) ~= "function" then return end
+    if revive == nil then revive = false end
     
-    if task then
-        pcall(task.func)
-        table.remove(self.tasks, 1)
-        
-        if task.keepAlive then
-            table.insert(self.tasks, task)
+    table.insert(self.tasks, Task.new(f, revive))
+end
+
+---
+--- Initiates the scheduler.
+---
+function Scheduler:start()
+    if self.thread ~= nil and coroutine.status(self.thread) == "running" then return end
+    if self.thread ~= nil and coroutine.status(self.thread) == "paused" then return coroutine.resume(self.thread) end
+    
+    self.running = true
+    
+    self.thread = coroutine.create(function()
+        while self.running do
+            if self.tasks then
+                local t = self.tasks[1]  ---@type Task
+                
+                pcall(t)
+                table.remove(self.tasks, 1)
+                
+                if t:revivable() then
+                    table.insert(self.tasks, t)
+                end
+            end
         end
-    end
+    end)
+    
+    coroutine.start(self.thread)
 end
 
-return returnable
+---
+--- Stops the scheduler.
+---
+function Scheduler:stop()
+    if self.thread == nil then return false end
+    
+    self.running = false
+end
+
+return Scheduler

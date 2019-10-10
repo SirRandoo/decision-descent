@@ -21,128 +21,101 @@
 -- If not, see <http://www.gnu.org/licenses/>. --
 -------------------------------------------------
 
---[[  Utility Methods  ]]--
-function string:startswith(str) return string.sub(self, 1, string.len(str)) == str end
-function string:endswith(str) return str == '' or string.sub(self, -string.len(str)) == str end
-function string:isUpper() return string.upper(self) == self end
-function string:isLower() return string.lower(self) == self end
 
-local function splitIntent(intent)
-    local segments = {}
+--[[  Logger Class Definitions  ]]--
+---@type table<string, Logger>
+local loggers = {}
 
-    for segment in intent:gmatch("%w+") do
-        Isaac.DebugString(segment)
-        table.insert(segments, segment)
-    end
+---@class Logger
+---
+---@field fmt string  @The format to use for log messages
+---@field name string  @The name of the logger
+local Logger = {}
+Logger.__index = Logger
 
-    return segments
+---@param name string
+---@return Logger
+function Logger.new(name)
+    if not name then name = "root" end
+    
+    return setmetatable({ name = name, fmt = "[{name}][{level}] {message}" }, Logger)
 end
 
-local function crawlStacktrace()
-    local currentStack = 1
-
-    while true do
-        local stack = debug.getinfo(currentStack, "Snl")
-
-        if stack == nil then
-            break
-        else
-            if not stack.source:endswith("utils.lua") then
-                local source, funcName, curLine = "(unknown file)", "(unknown function)", -1
-
-                source = string.sub(stack.source, 2, string.len(stack.source))
-                source, _ = source:gsub("(.*)[dD]ecision.[dD]escent%p", "")
-                if stack.name then
-                    funcName = stack.name
-                end
-                if stack.currentline then
-                    curLine = stack.currentline
-                end
-                if string.len(source) > 60 then
-                    source = string.sub(source, 1, 57) .. "..."
-                end
-
-                return source, funcName, curLine
-            else
-                currentStack = currentStack + 1
-            end
+---@param level string
+---@param message string
+---@return string
+function Logger:format(level, message)
+    local t = self.fmt
+    
+    for m in string.gmatch(self.fmt, "{(%w+)}") do
+        local p = "{" .. m .. "}"
+        
+        if m == "level" then
+            t = string.gsub(t, p, level)
+        elseif m == "name" then
+            t = string.gsub(t, p, self.name)
+        elseif m == "message" then
+            t = string.gsub(t, p, message)
         end
     end
 end
 
+---@param level string
+---@param message string
+function Logger:log(level, message) Isaac.DebugString(self:format(level, message)) end
 
-
-----------------------------------------
--- Based on the Python logging module --
-----------------------------------------
-
-
---[[  Logger Class Definitions  ]]--
-local Logger = {}
-local loggers = {}
-Logger.__index = Logger
-
-
-function Logger.new(loggerName)
-    if loggerName == nil then
-        loggerName = "root"
-    end
-    local returnable = {}
-
-    returnable.name = loggerName
-    returnable.msgFormat = "[{level}][{name}][{file}][{funcName}][Line #{line}] {message}"
-    setmetatable(returnable, Logger)
-
-    return returnable
-end
-
-function Logger:format(level, callerFile, callerName, callerLine, message)
-    local returnString = self.msgFormat:gsub("{level}", level)
-    returnString = returnString:gsub("{name}", self.name)
-    returnString = returnString:gsub("{file}", callerFile)
-    returnString = returnString:gsub("{funcName}", callerName)
-    returnString = returnString:gsub("{line}", callerLine)
-    returnString = returnString:gsub("{message}", tostring(message))
-
-    return returnString
-end
-
-function Logger:setFormat(format) self.msgFormat = format end
-
-function Logger:log(level, message)
-    local callerFile, callerName, callerLine = crawlStacktrace()
-    Isaac.DebugString(self:format(level, callerFile, callerName, callerLine, message))
-end
-
+---@param message string
 function Logger:debug(message)	self:log("DEBUG", message) end
+
+---@param message string
 function Logger:info(message) self:log("INFO", message) end
+
+---@param message string
 function Logger:warning(message) self:log("WARNING", message) end
+
+---@param message string
 function Logger:error(message) self:log("ERROR", message) end
+
+---@param message string
 function Logger:critical(message) self:log("CRITICAL", message) end
-
-
---[[  Logger Functions  ]]--
-local function getLogger(loggerName)
-    if loggerName == nil then
-        loggerName = "root"
-    end
-
-    if loggers[loggerName] ~= nil then
-        return loggers[loggerName]
-    else
-        loggers[loggerName] = Logger.new(loggerName)
-
-        return loggers[loggerName]
-    end
-end
 
 
 
 
 return {
-    ["crawlStacktrace"] = crawlStacktrace,
-    ["log_levels"] = log_levels,
-    ["logger"] = Logger,
-    ["getLogger"] = getLogger,
-    ["splitIntent"] = splitIntent
+    ---@param intent string
+    ---@return table<string>
+    splitIntent = function(intent)
+        local t = {}
+        
+        for segment in intent:gmatch("%w+") do
+            t[#t + 1] = segment
+        end
+        
+        return segments
+    end,
+    
+    ---@param name string
+    ---@return Logger
+    getLogger = function(name)
+        if not name then name = "root" end
+        if loggers[name] == nil then loggers[name] = logger.new(name) end
+        
+        return loggers[name]
+    end,
+    
+    ---
+    --- Gets the bottom-right position of the screen
+    ---
+    --- Author  » kilburn
+    ---@return number, number
+    getScreenSize = function()
+        local room = Game():GetRoom()
+        local pos = room:WorldToScreenPosition(Vector(0, 0)) - room:GetRenderScrollOffset() - Game().ScreenShakeOffset
+        
+        local rx = pos.X + 60 * 26 / 40
+        local ry = pos.Y + 140 * (26 / 40)
+        
+        return rx * 2 + 13 * 26, ry * 2 + 7 * 26
+    end
 }

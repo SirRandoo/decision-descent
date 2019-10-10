@@ -26,147 +26,227 @@
 local socket = require("socket")
 local json = require("json")
 local utils = require("utils")
+local const = require("constants")
+
+
+--[[ Types ]]--
+---@class Payload
+---@field intent string
+---@field args any[]
+---@field kwargs table<string, any>
+---@field reply string
+local Payload = {}
 
 
 --[[  Classes  ]]--
-local psuedoWs = {}
-psuedoWs.__index = psuedoWs
+---
+--- This class attempts to mimic a proper WebSocket in terms of non-blocking
+--- reading and writing.  Any reads are converted to a Lua table, internally
+--- known as intent payloads, then processed into functional intent calls.
+---@class PseudoWS
+---
+---@field public host string @The address to connect to when `PseudoWS:connect` is called
+---@field public port number @The port to connect to when `PseudoWS:connect` is called
+---@field socket table
+---@field listener thread
+---@field logger Logger
+---@field intents table<string, function>
+local PseudoWS = {}
+PseudoWS.__index = PseudoWS
 
-
-function psuedoWs.create()
-    local returnable = setmetatable({}, psuedoWs)
-    
-    returnable.host, returnable.port = "", 0
-    returnable.socket, returnable.listener, returnable.manager = nil, nil, nil
-    returnable.logger = utils.getLogger("decision_descent.http")
-    returnable.intents = require("intents")
-    
-    return returnable
+---
+--- Creates a new pseudo WebSocket.
+---
+---@public
+---@return PseudoWS
+---@see PseudoWS#connect
+function PseudoWS.create()
+    return setmetatable(
+            {
+                host = "",
+                port = 0,
+                socket = nil,
+                listener = nil,
+                manager = nil,
+                logger = utils.getLogger(const.meta.id .. ".http"),
+                intents = require("intents")
+            },
+            PseudoWS
+    )
 end
 
-function psuedoWs:sendMessage(intent, arguments, kwargs, reply)
-    if arguments == nil then arguments = {} end
-    if kwargs == nil then kwargs = {} end
-    if reply == nil then reply = "" end
-    if type(intent) ~= "string" then error("Intent must be a string!") end
-    if type(arguments) ~= "table" then error("Arguments must be a table of neutral arguments!") end
-
-    local succeeded, message = self.socket:send(json.encode({ sender = 1, intent = intent, args = arguments, kwargs = kwargs, reply = reply }) .. "\r\n")
-
-    if succeeded == nil then
+---
+--- Sends a message through the socket.
+---
+---@param intent string
+---@param arguments any[]
+---@param kwargs table<string, any>
+---@param reply string
+function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
+    -- Ensure the arguments passed are valid
+    if not intent or type(intent) ~= "string" then return self.logger:warning("Attempted to send a message with an invalid intent!") end
+    if not arguments or type(arguments) ~= "table" then arguments = {} end
+    if not kwargs or type(kwargs) ~= "table" then kwargs = {} end
+    if reply and type(reply) ~= "string" then reply = nil end
+    
+    -- Create a payload
+    local payload = { sender = const.sides.ISAAC, intent = intent }
+    
+    -- Populate the payload with optional content
+    -- This is to reduce packet bloat
+    if arguments then payload.args = arguments end
+    if kwargs then payload.kwargs = kwargs end
+    if reply then payload.reply = reply end
+    
+    -- Send the message to the other side.
+    local s, m = self.socket:send(json.encode(payload))
+    
+    -- If the message couldn't be sent, we'll log the error.
+    if not s then
         self.logger:warning("Could not send message to client!")
-        self.logger:warning(string.format("Error message: %s", message))
-    else
-        self.logger:info(string.format("%s bytes sent!", tostring(succeeded)))
+        self.logger:warning(string.format("Error message: %s", m))
+        return
     end
-end
-
-function psuedoWs:decodeMessage(message)
-    local succeeded, response = pcall(json.decode, message)
     
-    if succeeded then
-        return response
-    else
-        self.logger:warning("Message could not be decoded!")
-        return nil
-    end
+    -- If the message was sent, we'll log the number of bytes sent.
+    self.logger:info(string.format("%d bytes sent!", tonumber(s)))
 end
 
-function psuedoWs:dispatch(rawMessage)
-    local decodedMessage = self:decodeMessage(rawMessage)
+---
+--- Decodes a message from the other side.
+---
+---@param message string
+---@return Payload|nil
+function PseudoWS:decodeMessage(message)
+    -- Attempt to decode the message.
+    local s, m = pcall(json.decode, tostring(message))
     
-    if decodedMessage ~= nil then
-        if decodedMessage.sender == 1 then self.logger:info("Ignoring message from ourselves...") end
-        self.logger:info(string.format("Processing message intent \"%s\"...", decodedMessage.intent))
-        intent = string.lower(tostring(decodedMessage.intent))
+    -- If the message couldn't be decoded, we'll log the message.
+    if not s then return self.logger:warning(string.format("Could not decode message \"%s\" !", tostring(message))) end
+    
+    -- If the message could be decoded, we'll return it.
+    m.intent = string.lower(m.intent)
+    return m
+end
 
-        self.logger:info("Splitting intent into segments...")
-        local intentSegments = {}
-        local cursor = self.intents
-        for segment in intent:gmatch("%w+") do table.insert(intentSegments, segment) end
-
-        self.logger:info("Attempting to find intent...")
-        while #intentSegments > 0 do
-            local segment = intentSegments[1]
-
-            if cursor[segment] ~= nil then
-                cursor = cursor[segment]
-                table.remove(intentSegments, 1)
-            else
-                self.logger:warning(string.format("Intent \"%s\" could not be found!", decodedMessage.intent))
-            end
-        end
-
-        pcall(function() self.logger:info(string.format("Invoking intent \"%s\" with arguments \"%s\"", decodedMessage.intent, table.concat(decodedMessage.args, ", "))) end)
-        local succeeded, response = pcall(cursor, table.unpack(decodedMessage.args))
-
-        if succeeded then
-            self.logger:info("Intent invoked without any errors!")
-
-            if decodedMessage.reply then
-                self.logger:info("Sending intent output to client...")
-                self:sendMessage(decodedMessage.reply, {response})
-            end
-        else
-            self.logger:warning("Intent failed with the following error:")
-            self.logger:warning(response)
-        end
+---
+--- Dispatches an intent payload from the other half to the mod's intent system.
+---
+---@param payload string
+function PseudoWS:dispatch(payload)
+    -- Attempt to decode the payload message
+    local dPayload = self:decodeMessage(payload)
+    
+    -- If the payload couldn't be decoded, the payload will be logged.
+    if not dPayload then return self.logger:warning(string.format("Could not dispatch payload \"%s\" !", payload)) end
+    
+    -- If the payload is a message from this half, we'll ignore it.
+    if dPayload.sender == const.sides.PYTHON then self.logger:info("Received payload from ourselves!  Ignoring...") end
+    
+    self.logger:info(string.format("Processing payload with intent \"%s\" ...", dPayload.intent))
+    
+    self.logger:debug("Splitting intent into segments...")
+    local segs = {}  ---@type string[]
+    local c = self.intents
+    
+    -- Split the intent into segments, and insert them into the above array for use momentarily.
+    for s in string.gmatch(dPayload.intent, "%w+") do segs[#segs] = s end
+    
+    -- Attempt to locate the intent in the intent database
+    self.logger:debug("Attempting to find intent...")
+    
+    while #segs > 0 do
+        local seg = segs[1]
+        
+        if c[seg] == nil then return self.logger:warning(string.format("Could not locate intent \"%s\" !", dPayload.intent)) end
+        if type(c[seg]) == "function" then return self.logger:warning(string.format("Intent \"%s\" has no callable!", dPayload.intent)) end
+        
+        c = c[seg]
+        table.remove(segs, 1)
+    end
+    
+    
+    -- Attempt to invoke the requested intent with the payload data.
+    self.logger:info(string.format("Attempting to invoke intent \"%s\" with arguments {%s}", dPayload.intent, table.concat(dPayload.args, ", ")))
+    
+    ---@type number
+    local snap = socket.gettime()
+    local s, m = pcall(c, table.unpack(dPayload.args))
+    
+    if not s then return self.logger:warning("Intent failed with the following error: " .. tostring(m)) end
+    
+    self.logger:info(string.format("Intent execution took %d seconds.", socket.gettime() - snap))
+    
+    -- If the payload requested a response post-execution, we'll send the intent's output.
+    if dPayload.reply then
+        self.logger:info("The other side requested a reply!  Sending intent result...")
+        self:sendMessage(dPayload.reply, { m })
     end
 end
 
-function psuedoWs:onMessage()
-    while true do
-        local readable, _, errored = socket.select({self.socket}, nil, 0)
-
-        if #readable > 0 and errored == nil then
-            local succeeded, response = self.socket:receive()
-
-            if succeeded ~= nil then
-                self.logger:info(succeeded)
-                self:dispatch(succeeded)
-            elseif response ~= "timeout" then
-                self.logger:warning("Could not read message from client!")
-                self.logger:warning(string.format("Error message: %s", response))
-            end
-        end
-
-        coroutine.yield()
-    end
+---
+--- Processes any messages received through the socket.
+---
+function PseudoWS:processMessage()
+    local r, _, e = socket.select({ self.socket }, nil, 1)
+    
+    -- If there are no readable sockets, we'll return.
+    if not r or e then return end
+    
+    -- Attempt to retrieve a line from the socket.
+    local s, m = self.socket:receive()
+    
+    -- If we couldn't read from the socket, we'll log it, then return.
+    if s == nil then return self.logger:warning("Could not retrieve from socket!  Reason: " .. tostring(m)) end
+    if s == '' then return end  -- Ignore empty responses
+    
+    -- If we could successfully read from the socket, we'll dispatch the payload.
+    self.logger.info("Retrieved message: " .. tostring(s))
+    self:dispatch(tostring(s))
 end
 
-
-function psuedoWs:connect(host, port)
+---
+--- Initiates a connection to a remote.
+---
+---@param host string
+---@param port number
+---@return boolean|string
+function PseudoWS:connect(host, port)
+    -- If either the `host` or the `port` are different from the values stored
+    -- in the mod's fields, we'll update them to ensure the socket reconnects
+    -- to the proper point should the socket need to be reconnected.
+    if self.host ~= host then self.host = host end
+    if self.port ~= port then self.port = port end
+    
+    -- If the socket hasn't been created yet, we'll create a new instance.
+    -- Once the instance has been created, we'll set it to non-blocking,
+    -- and enable "keepalive" on the socket.  Hopefully the latter will
+    -- ensure the socket doesn't randomly close.
     if self.socket == nil then
         self.socket = socket.tcp()
         self.socket:settimeout(0)
+    
+        if not self.socket:setoption("keepalive", true) then self.logger:warning("Could not set socket to \"keepalive\"!  The socket may unexpectedly close.") end
     end
-    if self.host ~= host then self.host = host end
-    if self.port ~= port then self.port = port end
-    local success, response = self.socket:connect(self.host, tonumber(self.port))
-
-    self.listener = coroutine.create(function()
-                                     self.logger:info("Receiving....")
-                                        local succeeded, response = self.socket:receive()
-
-                                        if succeeded ~= nil then
-                                            self.logger:info(succeeded)
-                                            self:dispatch(succeeded)
-                                        elseif response == "closed" then
-                                            self.logger:warning("Disconnected from client!")
-                                            self.logger:info("Reconnecting...")
-                                            self:connect()
-                                        elseif response ~= "timeout" then
-                                            self.logger:warning("Could not read message from client!")
-                                            self.logger:warning(string.format("Error message: %s", response))
-                                        end
-                                     end)
-
-    return success
+    
+    -- Attempt to connect to the remote specified.
+    local s, m = self.socket:connect(self.host, tonumber(self.port))
+    
+    -- If we couldn't connect, we'll log it, then return.
+    if not s then
+        self.logger:warning(string.format("Could not connect to %s:%d !  Reason: %s", tostring(host), tonumber(port), tostring(m)))
+        return m
+    end
+    
+    return tonumber(s) == 1  -- This should always be true, but we'll add this check just in case.
 end
 
-function psuedoWs:disconnect()
+---
+--- Disconnects from the remote.
+---
+function PseudoWS:disconnect()
     if self.socket ~= nil then self.socket:close() end
     if self.listener ~= nil then self.listener = nil end
 end
 
-return { create = psuedoWs.create }
+return PseudoWS

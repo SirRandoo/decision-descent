@@ -22,15 +22,6 @@
 # GNU General Public License along with
 # Decision Descent.  If not,
 # see <https://www.gnu.org/licenses/>.
+__all__ = ['Message']
 
-
-__all__ = {"RoomLayout"}
-
-
-class RoomLayout:
-    def __init__(self, room_width: int, room_height: int, doors: dict, **options):
-        self._width = room_width
-        self._height = room_height
-        self._doors = doors
-        
-        self._force_path = options.get("force_path")
+from .message import Message

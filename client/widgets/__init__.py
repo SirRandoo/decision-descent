@@ -22,6 +22,4 @@
 # GNU General Public License along with
 # Decision Descent.  If not,
 # see <https://www.gnu.org/licenses/>.
-from .client import Client
-from .http import HttpListener
-from .qapplication import QApplication
+from .poll import Poll

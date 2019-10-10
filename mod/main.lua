@@ -1,535 +1,659 @@
--------------------------------------------------
--- This file is part of Decision Descent.      --
---                                             --
--- Decision Descent is free software: you can  --
--- redistribute it and/or modify it under the  --
--- terms of the GNU General Public License as  --
--- published by the Free Software Foundation,  --
--- either version 3 of the License, or (at     --
--- your option) any later version.             --
---                                             --
--- Decision Descent is distributed in the      --
--- hope that it will be useful, but WITHOUT    --
--- ANY WARRANTY; without even the implied      --
--- warranty of MERCHANTABILITY or FITNESS FOR  --
--- A PARTICULAR PURPOSE.  See the GNU General  --
--- Public License for more details.            --
---                                             --
--- You should have received a copy of the GNU  --
--- General Public License along with Decision  --
--- Descent.                                    --
--- If not, see <http://www.gnu.org/licenses/>. --
--------------------------------------------------
+------------------------------------------------
+-- This file is part of Decision Descent.
+--
+-- Decision Descent is free software:
+-- you can redistribute it
+-- and/or modify it under the
+-- terms of the GNU General
+-- Public License as published by
+-- the Free Software Foundation,
+-- either version 3 of the License,
+-- or (at your option) any later
+-- version.
+--
+-- Decision Descent is distributed in
+-- the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without
+-- even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A
+-- PARTICULAR PURPOSE.  See the GNU
+-- General Public License for more details.
+--
+-- You should have received a copy of the
+-- GNU General Public License along with
+-- Decision Descent.  If not,
+-- see <https://www.gnu.org/licenses/>.
+------------------------------------------------
 
---[[  Mini Config  ]]--
-local config = {
-    --[[  HTTP Settings  ]]--
-    http = {
-        -- The address to connect to
-        host = "127.0.0.1",
-        
-        -- The port to connect to
-        port = 25565
-    },
+--[[ Imports ]]--
+local statusConfig, config = require("config")
+local statusJson, json = require("json")
+local statusHttp, http = require("http")
+local statusUtils, utils = require("utils")
+local statusIntents, _ = require("intents")
+local statusScheduler, scheduler = require("scheduler")
+local statusConstants, const = require("constants")
+
+
+--[[ Environment Validation ]]--
+if not statusConfig or not statusJson or not statusIntents or not statusConstants or not statusHttp or not statusUtils or not statusScheduler or not debug then
+    ---@param message string
+    local function printError(message) Isaac.DebugString(string.format("[DescentIsaac] %s", tostring(message))) end
     
-    --[[  RNG Settings  ]]--
-    rooms = {
-        -- The format for a room is:
-        -- `minimum` - The minimum chance a room has to generate a poll.
-        --             Take curse rooms for example, only 2 out of 25 rooms in
-        --             vanilla Isaac can contain items, therefore the minimum
-        --             number should reflect that.
-        -- `maximum` - The maximum chance a room has to generate a poll.
-        --             Using the example above, there are only 25 variants of
-        --             the curse rooms, therefore the upper limit should
-        --             represent that.
-        -- `devil` --- The chance a poll has to be a demonic poll.  Certain
-        --             rooms have a chance to contain items from the devil
-        --             itempool instead of the room's normal pool.  If a number
-        --             is specified, then `devil` out of every `minimum` poll
-        --             will be a demonic poll.
-        
-        [tostring(RoomType.ROOM_ERROR)] = { minimum = 7, maximum = 28, devil = 3 },
-        [tostring(RoomType.ROOM_CURSE)] = { minimum = 2, maximum = 25 }
-    },
+    ---@param condition boolean
+    ---@param ifTrue any
+    ---@param ifFalse any
+    ---@return any
+    local function conditional(condition, ifTrue, ifFalse) if condition then return ifTrue else return ifFalse end end
     
-    --[[  Item Settings  ]]--
-    items = {
-        -- The format for an item is:
-        -- `revive` -- Whether or not the item can revive the player.
-        --             If this is `true` and the item is to be awarded during a
-        --             demonic poll, it will be awarded even if the player does
-        --             not have enough health to "purchase" it.  If the player
-        --             should die upon the item being granted, and more items
-        --             are still queued in the demonic poll, the will be granted
-        --             after the player has completely revived.
+    ---@param module table
+    ---@return string
+    local function isFound(module) return conditional(module, "FOUND", "MISSING") end
+    
+    printError("+----------------------------------------------------------------------------------")
+    printError("| Your Isaac environment doesn't appear to be right.")
+    printError("| In order to run Decision Descent, you'll need to correct the following problems:")
+    printError("|   • DEBUG LIBRARIES » " .. isFound(debug))
+    printError("|   • CONFIG          » " .. isFound(statusConfig))
+    printError("|   • JSON            » " .. isFound(statusJson))
+    printError("|   • HTTP            » " .. isFound(statusHttp))
+    printError("|   • UTILS           » " .. isFound(statusUtils))
+    printError("|   • INTENTS         » " .. isFound(statusIntents))
+    printError("|   • SCHEDULER       » " .. isFound(statusScheduler))
+    printError("|   • CONSTANTS       » " .. isFound(statusConstants))
+    printError("+----------------------------------------------------------------------------------")
+    printError("| If the 'json' or 'http' libraries are missing, you can try...")
+    printError("|   1. Closing the game if you haven't already")
+    printError("|   2. Navigating to \"The Binding of Isaac: Rebirth\" in your Steam library")
+    printError("|   3. Open the context menu via right-clicking on the game in the list")
+    printError("|   4. Click on \"Properties\"")
+    printError("|   5. Click on the \"LOCAL FILES\" tab at the top of the dialog")
+    printError("|   6. Click on the \"VERIFY INTEGRITY OF GAME FILES...\" button")
+    printError("|   7. Launching Isaac when the files are done verifying")
+    printError("+----------------------------------------------------------------------------------")
+    printError("| If the 'debug' or 'http' libraries are missing, you must do the following:")
+    printError("|   1. Closing the game if you haven't already")
+    printError("|   2. Navigating to \"The Binding of Isaac: Rebirth\" in your Steam library")
+    printError("|   3. Open the context menu via right-clicking on the game in ths list")
+    printError("|   4. Click \"Properties\"")
+    printError("|   5. Click on the \"SET LAUNCH OPTIONS...\" button")
+    printError("|   6. Type \"--luadebug\" into the text field, excluding the quotation marks")
+    printError("|   7. Click the \"OK\" button")
+    printError("|   8. Launch Isaac")
+    printError("| ")
+    printError("| The debug libraries are currently required for Decision Descent to function")
+    printError("| properly due to the HTTP library being locked behind the \"--luadebug\" flag.")
+    printError("+----------------------------------------------------------------------------------")
+    printError("| If the 'utils', 'intents', 'scheduler', 'constants, or 'config'")
+    printError("| libraries are missing, you can try the following...")
+    printError("|   1. Unsubscribing from the mod on the Steam workshop")
+    printError("|   2. Launching Isaac")
+    printError("|   3. Resubscribing to the mod on the Steam workshop")
+    printError("|   4. Launching Isaac")
+    printError("+----------------------------------------------------------------------------------")
+    printError("| If any of the above didn't solve your problem, you can submit an issue on the")
+    printError("| mod's GitHub page @ https://github.com/sirrandoo/decision-descent")
+    printError("|")
+    printError("| Before you submit a new issue, there are a couple of things you could do first:")
+    printError("|   • Search for your problem on the issue tracker --- You might find a solution")
+    printError("|")
+    printError("| If you still want to proceed with submitting a new issue, you should include...")
+    printError("|   • Your log file")
+    printError("|   • Your OS --- Isaac behaves differently on different OSes!")
+    printError("|   • Your mod version")
+    printError("|      • Your mod version can be found in the config.lua file, under 'meta.version'")
+    printError("+----------------------------------------------------------------------------------")
+    
+    return error("Mod environment is not set up correctly", 0)
+end
+
+
+--[[ Class Declarations ]]--
+---@class Version
+---@field major number
+---@field minor number
+---@field micro number
+local Version = {
+    __eq = function(this, that)
+        if type(this) ~= type(that) then return false end
+        if type(this) == type(that) then return true end
         
-        [tostring(CollectibleType.COLLECTIBLE_DEAD_CAT)] = { revive = true },
-        [tostring(CollectibleType.COLLECTIBLE_ONE_UP)] = { revive = true },
-        [tostring(CollectibleType.COLLECTIBLE_JUDAS_SHADOW)] = { revive = true },
-        [tostring(CollectibleType.COLLECTIBLE_LAZARUS_RAGS)] = { revive = true },
-        [tostring(CollectibleType.COLLECTIBLE_ANKH)] = { revive = true }
-    }
+        return this.major == that.major and this.minor == that.minor and this.micro == that.micro
+    end,
+    __lt = function(this, that)
+        if type(this) ~= type(that) then return false end
+        if this.major > that.major then return false end
+        if this.minor > that.minor then return false end
+        if this.micro > that.micro then return false end
+        
+        return true
+    end,
+    __gt = function(this, that)
+        if type(this) ~= type(that) then return false end
+        if this.major < that.major then return false end
+        if this.minor < that.minor then return false end
+        if this.micro < that.micro then return false end
+        
+        return true
+    end,
+    __le = function(this, that)
+        if type(this) ~= type(that) then return false end
+        if this.major > that.major then return false end
+        if this.minor > that.minor then return false end
+        if this.micro > that.micro then return false end
+        
+        return true
+    end,
+    __ge = function(this, that)
+        if type(this) ~= type(that) then return false end
+        if this.major < that.major then return false end
+        if this.minor < that.minor then return false end
+        if this.micro < that.micro then return false end
+        
+        return true
+    end,
+    __tostring = function() return string.format("%d.%d.%d", self.major, self.minor, self.micro) end
 }
+Version.__index = Version
 
---[[  Initial Declarations  ]]--
-local name, version, apiVersion = "Decision Descent", "0.4.0", 1.0
-local Descent = RegisterMod(name, apiVersion)
-
-
---[[  Initial Functions  ]]--
-local function fatal(...)
-    for _, v in ipairs(arg) do
-        if type(v) == "table" then
-            for _, v2 in ipairs(v) do
-                if v2 == nil then
-                    Isaac.DebugString('[descent][FATAL]')
-                else
-                    Isaac.DebugString(string.format('[descent][FATAL]     - %s', tostring(v2)))
-                end
-            end
-        else
-            if v == nil then
-                Isaac.DebugString('[descent][FATAL]')
-            else
-                Isaac.DebugString(string.format("[descent][FATAL] %s", tostring(v)))
-            end
-        end
-    end
+---
+--- Creates a new Version object.
+---
+---@param major number
+---@param minor number
+---@param micro number
+function Version.new(major, minor, micro)
+    return setmetatable({ major = major, minor = minor, micro = micro }, Version)
 end
 
+---
+--- Creates a new Version object a version string.
+---
+---@param version string
+---@return Version
+function Version.fromString(version)
+    local t = {}  ---@type string[]
+    
+    for s in string.gmatch(version, "%d+") do t[#t] = s end
+    
+    return t
+end
 
---[[  Requires  ]]--
-local json_imported, json = pcall(require, "json")
-local utils_imported, utils = pcall(require, "utils")
-local http_imported, http = pcall(require, "http")
+---@class Metadata
+local Metadata = {}
+Metadata.__index = Metadata
 
-
---[[  Environment Checks  ]]--
-if not debug then
-    fatal(
-            "The debug libraries are not accessible!",
-            "While this mod itself does not use the libraries themselves,",
-            "the debug libraries are a solid way to check if the user has",
-            'the "--luadebug" flag set in their launch options.',
-            nil,
-            "Decision Descent requires this flag because this mod uses the",
-            "luasockets library included in every Afterbirth+ install, but",
-            'this library is only accessible when "--luadebug" has been added',
-            "to the launch options.",
-            nil,
-            nil,
-            "You can enable the debug libraries by following these steps...",
+---
+--- Creates a new Metadata object.
+---
+---@param id string
+---@param name string
+---@param version Version
+---@param api number
+---@return Metadata
+function Metadata.new(id, name, version, api)
+    return setmetatable(
             {
-                'Navigate to "The Binding of Isaac: Rebirth" in your Steam library',
-                'Open the context menu for it by right-clicking',
-                'Click on "Properties"',
-                'Click on the button "SET LAUNCH OPTIONS..."' 'Add "--luadebug" into the text field, excluding the quotation marks.',
-                'Click OK button',
-                'Close the properties dialog',
-                '(Re)launch Isaac'
-            }
+                id = id,
+                name = name,
+                version = version,
+                api = api,
+                __newindex = function(table, key, value) end
+            },
+            Metadata
     )
-    
-    error('"--luadebug" must be included in your launch options!')
 end
 
-if not json_imported then
-    fatal(
-            "Isaac's JSON library could not be imported!",
-            "Decision Descent uses this library to serialize and unserialize data.",
-            "Without this library, this mod cannot not communicate with the client.",
-            nil,
-            "If Nicalis removed this library recently, you can submit a bug report",
-            "on the mod's issue tracker @ https://github.com/sirrandoo/decision-descent/issues",
-            "Before you submit a bug report, you should make sure the issue hasn't",
-            "already been reported.",
-            nil,
-            "If Nicalis did not remove this library recently, your game files might",
-            "be missing some files.",
-            nil,
-            nil,
-            "You can verify your game files by following these steps...",
+---
+--- Returns the ID.
+---
+---@return string
+function Metadata:getId() return self.id end
+
+---
+--- Returns the name.
+---
+---@return string
+function Metadata:getName() return self.name end
+
+---
+--- Returns the version.
+---
+---@return Version
+function Metadata:getVersion() return self.version end
+
+---
+--- Returns the API version.
+---
+---@return number
+function Metadata:getApiVersion() return self.api end
+
+---@class DescentIsaac
+---
+---@field inst table
+---@field scheduler Scheduler
+---@field logger Logger
+---@field http PseudoWS
+---@field state number
+---@field metadata Metadata
+local DescentIsaac = {}
+DescentIsaac.__index = DescentIsaac
+
+---
+--- Creates a new instance of DescentIsaac.
+---
+--- • There should only ever be **ONE** instance of this class.
+---
+---@return DescentIsaac
+function DescentIsaac.create()
+    return setmetatable(
             {
-                'Navigate to "The Binding of Isaac: Rebirth" in your Steam library',
-                'Open the context menu for it by right-clicking',
-                'Click on "Properties"',
-                'Click on the "LOCAL FILES" tab',
-                'Click on the button "VERIFY INTEGRITY OF GAME FILES..."',
-                "(Re)launch Issac when the game files have been verified"
+                inst = nil,
+                scheduler = scheduler.new(),
+                logger = utils.getLogger(const.meta.id),
+                http = http.create(),
+                state = const.states.NONE,
+                metadata = Metadata.new(const.meta.id, const.meta.name, Version.fromString(const.meta.version), 1.0)
             },
-            nil,
-            nil,
-            nil,
-            string.format('Error message: %s', tostring(json))
+            DescentIsaac
     )
-    
-    error("Isaac's JSON library is required to use Decision Descent!")
 end
 
-if not http_imported then
-    fatal(
-            "Decision Descent's HTTP library could not be imported!",
-            "Decision Descent uses this library to communicate with the client.",
-            "Without this library, this mod cannot not communicate with the client.",
-            nil,
-            "If this file is not in the mod's directory, one of two things happened...",
-            {
-                "Steam couldn't properly sync this mod",
-                "The place you've obtained this mod didn't package the HTTP library"
-            },
-            nil,
-            nil,
-            "If this is a Steam error, you can try...",
-            {
-                '(Re)launching Isaac',
-                'Unsubscribing & resubscribing to the mod on the workshop'
-            },
-            nil,
-            nil,
-            "If the above didn't work, you can manually download the mod from its",
-            "repository @ https://github.com/sirrandoo/decision-descent/releases",
-            "Once you've downloaded the latest release, you can run the included",
-            "bash/batch file to make sure it's installed properly.  Alternatively,",
-            "You can delete the mod from the Afterbirth+ mods directory, then move",
-            "the mod files from the release into the aforementioned mods directory.",
-            nil,
-            nil,
-            nil,
-            string.format('Error message: %s', tostring(http))
-    )
+---
+--- Prepares the mod for basic functionality.
+---
+function DescentIsaac:prepare()
+    self.logger:info("Preparing Decision Descent...")
+    self.state = const.states.SETTING_UP
     
-    error("Decision Descent's HTTP library is required to use Decision Descent!")
-end
-
-if not utils_imported then
-    fatal(
-            "Decision Descent's utils library could not be imported!",
-            "Decision Descent uses this library to perform various tasks throughout",
-            "the mod.  Without this library, this mod cannot function properly.",
-            nil,
-            "If this file is not in the mod's directory, one of two things happened...",
-            {
-                "Steam couldn't properly sync this mod",
-                "The place you've obtained this mod didn't package the utils library"
-            },
-            nil,
-            nil,
-            "If this is a Steam error, you can try...",
-            {
-                '(Re)launching Isaac',
-                'Unsubscribing & resubscribing to the mod on the workshop'
-            },
-            nil,
-            nil,
-            "If the above didn't work, you can manually download the mod from its",
-            "repository @ https://github.com/sirrandoo/decision-descent/releases",
-            "Once you've downloaded the latest release, you can run the included",
-            "bash/batch file to make sure it's installed properly.  Alternatively,",
-            "You can delete the mod from the Afterbirth+ mods directory, then move",
-            "the mod files from the release into the aforementioned mods directory.",
-            nil,
-            nil,
-            nil,
-            string.format('Error message: %s', tostring(utils))
-    )
+    self.logger:info("Creating mod instance...")
+    self.inst = RegisterMod(self.metadata:getName(), self.metadata:getApiVersion())
     
-    error("Decision Descent's utils library is required to use Decision Descent!")
-end
-
-
---[[  Post-Check Variables  ]]--
-Descent.logger = utils.getLogger("descent")
-Descent.http = http.create()
-
-
---[[  Additional Intents  ]]--
-Descent.http.intents.state = {
-    config = {
-        update = function(modConf)
-            local httpConfig = config.http
-            local roomConfig = config.rooms
-    
-            config = modConf
-            config.http = httpConfig
-            config.rooms = roomConfig
-    
-            Descent.logger:info("Config updated!")
-        end
-    },
-
-    dimensions = {
-        update = function(width, height)
-            if tonumber(width) == nil then
-                width = 0
-            else
-                width = tonumber(width)
+    self.logger:info("Injecting config intent...")
+    self.http.intents.state = {
+        config = {
+            ---@param c table
+            update = function(c)
+                local rng = config.rng  -- TODO: Implement RNG settings in client
+                
+                config = c
+                c.rng = rng
+                
+                self.logger:info("Config updated!")
             end
-            if tonumber(height) == nil then
-                height = 0
-            else
-                height = tonumber(height)
-            end
-    
-            config.dimensions = { width = width, height = height }
-    
-            Descent.logger:info("Dimensions updated!")
-        end
+        }
     }
-}
-
-
---[[  HTTP Checks  ]]--
-local succeeded, response = pcall(function() Descent.http:connect(config.http.host, config.http.port) end)
-
-if not succeeded then
-    Descent.logger:critical("Could not connect to client!")
-    Descent.logger:critical("The Lua half of Decision Descent is merely the client's puppet, and cannot function on its own!")
-    Descent.logger:critical(string.format("Error message: %s", response))
-else
-    Descent.logger:info("Successfully connected to the client!")
 end
 
+---
+--- Initializes the mod for advanced functionality.
+---
+function DescentIsaac:initialize()
+    self.logger:info("Initializing Decision Descent...")
+    self.logger:info(string.format("Decision Descent v%s", tostring(self.metadata.getVersion())))
+    
+    if not self.scheduler.running then
+        self.logger:info("Starting scheduler...")
+        self.scheduler:start()
+    end
+    
+    if not self.http.socket then
+        self.logger:info("Connecting to remote...")
+        self.http:connect()
+    end
+    
+    self.state = const.states.SET_UP
+end
 
---[[  Utility Functions  ]]--
-local function generatePoll()
-    Descent.logger:info("Generating poll...")
+---
+--- Schedules tasks for recurring execution.
+---
+function DescentIsaac:schedule()
+    self.logger:info("Scheduling recurring tasks...")
     
-    local maximumChoices = 3
-    local game = Game()
-    local room = game:GetRoom()
-    local roomType = room:GetType()
-    local roomSeed = room:GetAwardSeed()
-    local itemConfig = Isaac.GetItemConfig()
-    local itemPool = game:GetItemPool()
-    local choices = {}
-    
-    if config.core then
-        if config.core.maximum_choices < 0 then
-            maximumChoices = 10  -- Reduced for obvious reasons
-        elseif config.core.maximum_choices == 0 then
-            maximumChoices = 0
-        else
-            maximumChoices = config.core.maximum_choices
-        end
-    end
-    
-    local roomPool = itemPool:GetPoolForRoom(roomType, roomSeed)
-    local roomSpecs = config.rooms[tostring(roomType)]
-    
-    if roomSpecs ~= nil then
-        local shouldGenerate = math.random(roomSpecs.maximum) <= roomSpecs.minimum
-        
-        if not shouldGenerate then
-            return
-        end
-    end
-    
-    while #choices < maximumChoices do
-        local choice = itemPool:GetCollectible(roomPool, false, roomSeed)
-        
-        if choice ~= nil then
-            local item = itemConfig:GetCollectible(choice)
-            local duplicate = false
-            
-            for a = 1, #choices do
-                if choices[a] == choice then
-                    duplicate = true
+    self.logger:info("Scheduling reoccurring HTTP reader...")
+    self.scheduler:schedule(
+            function()
+                if self.http:processMessage() == 'closed' then
+                    self.http:connect()
                 end
-            end
+            end,
+            true
+    )
+end
+
+---
+--- Automatically registers all callbacks defined in this class.
+--- This method iterates over the members of this class to look
+--- for keys in the ModCallbacks table, then automatically registers
+--- them as a callback.
+---
+function DescentIsaac:registerCallbacks()
+    self.logger:info("Registering callbacks...")
+    local c = 0
+    
+    for k, v in pairs(self) do
+        if ModCallbacks[k] ~= nil then
+            self.logger:info("Registering callback \"%s\"...", k)
+            self.inst:AddCallback(ModCallbacks[k], v)
             
-            if not duplicate then
-                table.insert(choices, { item.ID, item.Name })
-            end
-        else
-            break
+            c = c + 1
         end
     end
     
-    if #choices > 1 then
-        local directChoices = {}
-        local aliases = {}
-        
-        for _, itemArray in pairs(choices) do
-            local directChoice = tostring(itemArray[1])
-            table.insert(directChoices, directChoice)
-            
-            if aliases[directChoice] ~= nil then
-                table.insert(aliases[directChoice], itemArray[2])
-            else
-                aliases[directChoice] = { itemArray[2] }
-            end
-        end
-        
-        if roomSpecs == nil then
-            if roomType ~= RoomType.ROOM_DEVIL then
-                Descent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-            elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-                Descent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
-            end
-        else
-            if roomSpecs.devil ~= nil then
-                local isDevilPoll = math.random(roomSpecs.maximum) <= roomSpecs.devil
+    self.logger:info("Registered %d callbacks!", tonumber(c))
+end
+
+---
+--- Schedules a new collectible poll to be sent to the
+--- other half.
+---
+---@param choices string[]
+---@param aliases table
+function DescentIsaac:sendCollectiblePoll(choices, aliases)
+    if aliases == nil then aliases = {} end
     
-                if roomType ~= RoomType.ROOM_DEVIL then
-                    if not isDevilPoll then
-                        Descent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-                    else
-                        Descent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+    self.scheduler:schedule(function()
+        self.http:sendMessage("polls.create", choices, aliases, "player.grant.collectible")
+    end, false)
+end
+
+---
+--- Schedules a new multi-collectible poll to be sent to
+--- the other half.
+---
+---@param choices string[]
+---@param aliases table
+function DescentIsaac:sendMultiCollectiblePoll(choices, aliases)
+    if aliases == nil then aliases = {} end
+    
+    self.scheduler:schedule(function()
+        self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.collectible")
+    end, false)
+end
+
+---
+--- Schedules a new devil poll to be sent to the other half.
+---
+---@param choices string[]
+---@param aliases table
+function DescentIsaac:sendDevilPoll(choices, aliases)
+    if aliases == nil then aliases = {} end
+    
+    self.scheduler:schedule(function()
+        self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.devil")
+    end, false)
+end
+
+---
+--- Schedules a poll to be generated.
+---
+function DescentIsaac:generatePoll()
+    self.scheduler:schedule(
+            function()
+                self.logger:info("Generating poll...")
+                
+                local mChoices = config.polls.choices.maximum
+                local game = Game()
+                local room = game:GetRoom()
+                local rType = room:GetType()
+                local rSeed = room:GetAwardSeed()
+                local iConfig = Isaac.GetItemConfig()
+                local iPool = game:GetItemPool()
+                local rng = RNG()
+                local choices = {}
+                
+                rng:SetSeed(rSeed)
+                
+                if config.polls == nil or config.polls.maximum_choices == nil then mChoices = 10 end
+                if config.polls.maximum_choices < 0 then mChoices = 10 end
+                if config.polls.maximum_choices >= 0 then mChoices = config.polls.maximum_choices end
+                
+                local rPool = iPool:GetPoolForRoom(rType, rSeed)
+                local rSpecs = config.rng.rooms[tostring(rType)]
+                
+                if rSpecs ~= nil and rng:RandomInt(rSpecs.maximum) > rSpecs.minimum then return end
+                
+                
+                -- Since Isaac doesn't let you peek at item pools, we'll
+                -- have to constantly get new items until unique ones
+                -- pop up.
+                local t = 0
+                
+                while #choices < #mChoices do
+                    local c = iPool:GetCollectible(rPool, false, rSeed)
+                    
+                    if c == nil then t = t + 1 end
+                    if t >= 3 then break end
+                    
+                    local i = iConfig:GetCollectible(c)
+                    local dup = false
+                    
+                    for a = 1, #choices do
+                        if choices[a] == c then
+                            dup = true
+                        end
                     end
-                elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-                    Descent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+                    
+                    if not dup then choices[#choices + 1] = { id = i.ID, name = i.Name } end
                 end
-            else
-                if roomType ~= RoomType.ROOM_DEVIL then
-                    Descent.http:sendMessage("polls.create", directChoices, aliases, "player.grant.collectible")
-                elseif roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
-                    Descent.http:sendMessage("polls.multi.create", directChoices, aliases, "player.grant.devil")
+                
+                if #choices <= 1 then return self.logger:warning("Could not generate enough options for a poll!") end
+                
+                
+                -- Iterate over the choices so we can alias item IDs to their item names.
+                -- Transforming the item name into aliases should be handled by the other half.
+                local dChoices = {}
+                local aliases = {}
+                for _, item in pairs(choices) do
+                    local dChoice = tostring(item.ID)
+                    dChoices[#dChoices + 1] = dChoice
+                    
+                    if aliases[dChoice] == nil then aliases[dChoice] = {} end
+                    
+                    table.insert(aliases[dChoice], item.Name)
                 end
-            end
-        end
-    else
-        Descent.logger:info("Insufficient choices!")
-    end
+                
+                -- Time for the mess that is poll generation
+                if rSpecs == nil then
+                    -- If there is no spec defined for the room, we'll use the defaults
+                    -- which are:
+                    --
+                    -- DEVIL / BLACK MARKET » Send a devil poll
+                    -- ANYTHING ELSE        » Send a regular poll
+                    if rType ~= RoomType.ROOM_DEVIL then
+                        self.http:sendMessage("polls.create", dChoices, aliases, "player.grant.collectible")
+                    elseif rType == RoomType.ROOM_DEVIL or rType == RoomType.ROOM_BLACK_MARKET then
+                        self.http:sendMessage("polls.multi.create", dChoices, aliases, "player.grant.devil")
+                    end
+                else
+                    -- If there is a spec for the room, we'll use that instead.
+                    --
+                    -- If the spec says a devil poll can be generated, we'll roll
+                    -- the RNG to see if a non-devil room is going to be one.
+                    --
+                    -- If the spec doesn't define a devil poll value, or the value
+                    -- is false, we'll use the defaults.
+                    if rSpecs.devil then
+                        if rType ~= RoomType.ROOM_DEVIL then
+                            if rng:RandomInt(rSpecs.maximum) <= rSpecs.devil then
+                                self.http:sendMessage("polls.multi.create", dChoices, aliases, "player.grant.devil")
+                            else
+                                self.http:sendMessage("polls.create", dChoices, aliases, "player.grant.collectible")
+                            end
+                        elseif rType == RoomType.ROOM_DEVIL or rType == RoomType.ROOM_BLACK_MARKET then
+                            self.http:sendMessage("polls.multi.create", dChoices, aliases, "player.grant.devil")
+                        end
+                    else
+                        if rType ~= RoomType.ROOM_DEVIL then
+                            self.http:sendMessage("polls.create", dChoices, aliases, "player.grant.collectible")
+                        elseif rType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_BLACK_MARKET then
+                            self.http:sendMessage("polls.multi.create", dChoices, aliases, "player.grant.devil")
+                        end
+                    end
+                end
+            end,
+            false
+    )
 end
 
 
 --[[  Callbacks  ]]--
-function Descent.POST_GAME_STARTED(isSave)
-    if not isSave then
-        Descent.http:sendMessage("polls.delete", { "*" })
+---
+--- Invoked when the player starts a new run.
+---
+--- This callback is responsible for notifying the other half to remove any
+--- current polls running.
+---
+function DescentIsaac.MC_POST_GAME_STARTED(isSave)
+    if isSave then return end
+    
+    DescentIsaac.scheduler:schedule(function()
+        DescentIsaac.http:sendMessage("polls.delete", { "*" })
+    end, false)
+end
+
+---
+--- Invoked when the player exits a run.
+---
+--- This callback is responsible for notifying the other half to perform logical
+--- closing operations, such as ending all running polls.
+---
+function DescentIsaac.MC_PRE_GAME_EXIT(shouldSave)
+    if shouldSave then
+        DescentIsaac.scheduler:schedule(function()
+            DescentIsaac.http:sendMessage("client.close")
+        end, false)
     end
 end
-function Descent.PRE_GAME_EXIT(shouldSave) if shouldSave then Descent.http:sendMessage("client.close") end end
-function Descent.POST_NEW_LEVEL() Descent.http:sendMessage("client.state.level.changed") end
-function Descent.POST_RENDER()
-    local renderText = string.format("Decision Descent v%s", version)
-    
-    if config.dimensions ~= nil then
-        local renderX = math.abs(math.floor(tonumber(config.dimensions.width) / 3) - Isaac.GetTextWidth(renderText))
+
+---
+--- Invoked when the player enters a new level.
+---
+--- This callback is responsible for alerting the other half that the player
+--- changed levels.
+---
+function DescentIsaac.MC_POST_NEW_LEVEL()
+    DescentIsaac.scheduler:schedule(function()
+        DescentIsaac.http:sendMessage("client.state.level.changed")
+    end, false)
+end
+
+---
+--- Invoked after the game is finished rendering its assets, so we can render
+--- ours.
+---
+--- This callback is responsible for displaying the version text at the
+--- bottom-center of the screen, and ensuring boss room collectibles are removed.
+---
+function DescentIsaac.MC_POST_RENDER()
+    if config.hud.enabled then
+        local sX, sY = utils.getScreenSize()
         
-        if config.hud ~= nil then
-            if config.hud.enabled then
-                local renderY = math.floor((tonumber(config.dimensions.height) / 2) - config.hud.height * 1.5) - 35
-    
-                Isaac.RenderScaledText(renderText, renderX, renderY, config.hud.width, config.hud.height, config.hud.text_color.r, config.hud.text_color.g, config.hud.text_color.b, config.hud.alpha)
-            end
-        else
-            local renderY = math.floor(tonumber(config.dimensions.height) / 2)
-            
-            Isaac.RenderScaledText(renderText, renderX, renderY, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
-        end
+        -- Render the version if it's an alpha build
+        local vText = string.format("Decision Descent v%s", tostring(DescentIsaac.metadata.getVersion()))
+        local rX = math.abs(math.floor(tonumber(sX) / 3) - Isaac.GetTextWidth(vText))
+        
+        Isaac.RenderScaledText(vText, rX, sY - 35, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
     end
     
+    -- Every half an in-game second, we'll check to see if the player is in the
+    -- boss room.  If they are, and they killed the boss, we'll remove the item
+    -- that spawns.
     if Isaac.GetFrameCount() % 15 == 0 then
-        local currentRoom = Game():GetRoom()
-        
-        if currentRoom:GetType() == RoomType.ROOM_BOSS then
-            local centerPos = currentRoom:GetCenterPos()
+        local cRoom = Game():GetRoom()
+    
+        if cRoom:GetType() == RoomType.ROOM_BOSS and cRoom:GetAliveBossesCount() <= 0 then
+            local rCenter = cRoom:GetCenterPos()
             local entities = Isaac.GetRoomEntities()
-            
-            for a = 1, #entities do
-                local entity = entities[a]
-                
+        
+            for _, entity in pairs(entities) do
                 if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_COLLECTIBLE then
-                    Isaac.RenderText("+", entity.Position.X, entity.Position.Y, 1.0, 1.0, 1.0, 1.0)
-                    
-                    if entity.Position.X == centerPos.X then
-                        Descent.logger:warning("Collectible is within deletion zone!")
-                        Descent.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
-                        
-                        entity:Remove()
+                    if DescentIsaac.metadata.getVersion().major < 0 then Isaac.RenderText("+", entity.Position.X, entity.Position.Y, 1.0, 1.0, 1.0, 1.0) end
+    
+                    -- TODO: Currently, this only works if the player doesn't have "more options"
+                    if entity.Position.X == rCenter.X then
+                        DescentIsaac.logger:warning("Collectible is within deletion zone!")
+                        DescentIsaac.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
+        
+                        entity.Remove()
                     end
                 end
             end
         end
     end
 end
-function Descent.POST_UPDATE()
-    if Isaac.GetFrameCount() % 30 == 0 then
-        local status = coroutine.status(Descent.http.listener)
-    
-        if status == "suspended" then
-            coroutine.resume(Descent.http.listener)
-        elseif status == "dead" then
-            Descent.logger:critical("Listener coroutine is dead!")
-            Descent.logger:critical("Reviving coroutine...")
-            Descent.http.listener = coroutine.create(function()
-                Descent.http:onMessage()
-            end)
-        end
-    end
-end
-function Descent.POST_NEW_ROOM()
-    Descent.http:sendMessage("client.state.room.changed")
+
+---
+--- Invoked when the player switches rooms.
+---
+--- This callback is responsible for ensuring a poll is generated when the
+--- player enters a *new*, supported room.
+---
+function DescentIsaac.MC_POST_NEW_ROOM()
+    DescentIsaac.scheduler.schedule(function()
+        DescentIsaac.http:sendMessage("client.state.room.changed")
+    end, false)
     
     local game = Game()
-    local currentRoom = game:GetRoom()
-    local currentLevel = game:GetLevel()
-    local roomType = currentRoom:GetType()
-    local levelType = currentLevel:GetStage()
+    local cRoom = game:GetRoom()
+    local cLevel = game:GetLevel()
+    local rType = cRoom:GetType()
+    local lType = cLevel:GetStage()
     
-    --[[  Room Checks  ]]--
-    local isSupportedRoom = roomType == RoomType.ROOM_ERROR or roomType == RoomType.ROOM_TREASURE or roomType == RoomType.ROOM_BOSS or roomType == RoomType.ROOM_CURSE or roomType == RoomType.ROOM_DEVIL or roomType == RoomType.ROOM_ANGEL or roomType == RoomType.ROOM_BLACK_MARKET
+    -- Ensure the current room is supported
+    local supported = rType == RoomType.ROOM_ERROR or rType == RoomType.ROOM_TREASURE or rType == RoomType.ROOM_BOSS or rType == RoomType.ROOM_CURSE or rType == RoomType.ROOM_DEVIL or rType == RoomType.ROOM_ANGEL or rType == RoomType.ROOM_BLACK_MARKET
     
-    if currentRoom:IsFirstVisit() then
-        local generator = coroutine.create(generatePoll)
+    if not supported then return end
+    if not cRoom:IsFirstVisit() then return end
     
-        if levelType == LevelStage.STAGE7 then
-            -- The Void checks
-            if isSupportedRoom and currentRoom:GetDeliriumDistance() > 0 then
-                coroutine.resume(generator)
-            end
-        elseif levelType == LevelStage.STAGE5 or levelType == LevelStage.STAGE6 then
-            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
-                -- Ignore Isaac/Satan boss room
-                coroutine.resume(generator)
-            end
-        elseif levelType == LevelStage.STAGE3_2 or (levelType == LevelStage.STAGE3_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
-            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
-                -- Ignore the Mom boss room
-                coroutine.resume(generator)
-            end
-        elseif levelType == LevelStage.STAGE4_2 or (levelType == LevelStage.STAGE4_1 and currentLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
-            if isSupportedRoom and not currentRoom:IsCurrentRoomLastBoss() then
-                -- Ignore the It Lives! / Mom's Heart boss room
-                coroutine.resume(generator)
-            end
-        elseif levelType == LevelStage.STAGE4_3 then
-            if isSupportedRoom and roomType ~= RoomType.ROOM_BOSS then
-                -- Ignore Hushy's room
-                coroutine.resume(generator)
-            end
-        elseif isSupportedRoom then
-            coroutine.resume(generator)
+    
+    -- Now it's time for another mess that is level checks and room checks.
+    if lType == LevelStage.STAGE7 then
+        -- The Void checks
+        if supported and cRoom:GetDeliriumDistance() > 0 then
+            DescentIsaac:generatePoll()
         end
+    elseif lType == LevelStage.STAGE5 or lType == LevelStage.STAGE6 then
+        if supported and not cRoom:IsCurrentRoomLastBoss() then
+            -- Ignore Isaac/Satan boss room
+            DescentIsaac:generatePoll()
+        end
+    elseif lType == LevelStage.STAGE3_2 or (lType == LevelStage.STAGE3_1 and cLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+        if supported and not cRoom:IsCurrentRoomLastBoss() then
+            -- Ignore the Mom boss room
+            DescentIsaac:generatePoll()
+        end
+    elseif lType == LevelStage.STAGE4_2 or (lType == LevelStage.STAGE4_1 and cLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
+        if supported and not currentRoom:IsCurrentRoomLastBoss() then
+            -- Ignore the It Lives! / Mom's Heart boss room
+            DescentIsaac:generatePoll()
+        end
+    elseif lType == LevelStage.STAGE4_3 then
+        if supported and rType ~= RoomType.ROOM_BOSS then
+            -- Ignore Hushy's room
+            DescentIsaac:generatePoll()
+        end
+    elseif supported then
+        DescentIsaac:generatePoll()
+    end
+end
+
+---
+--- Invoked when the game finishes processing events.
+---
+--- This callback is responsible for ensuring the scheduler is always running.
+---
+function DescentIsaac.MC_POST_UPDATE()
+    if Isaac.GetFrameCount() % 30 == 0 then
+        DescentIsaac.scheduler:start()  -- Ensure the scheduler is always running
     end
 end
 
 
 --[[  Main  ]]--
-Descent.logger:warning("Decision Descent current only supports Windows 10!")
-Descent.logger:warning("If you are using Decision Descent on an operating system other than Windows 10, be sure to submit your issues on the Github page @ https://github.com/sirrandoo/decision-descent")
 
-Descent.logger:info("Registering callbacks...")
-
-Descent.logger:info("Registering MC_POST_GAME_STARTED callback...")
-Descent:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, Descent.POST_GAME_STARTED)
-
-Descent.logger:info("Registering MC_PRE_GAME_EXIT callback...")
-Descent:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, Descent.PRE_GAME_EXIT)
-
-Descent.logger:info("Registering MC_POST_NEW_LEVEL callback...")
-Descent:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, Descent.POST_NEW_LEVEL)
-
-Descent.logger:info("Registering MC_POST_NEW_ROOM callback...")
-Descent:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, Descent.POST_NEW_ROOM)
-
-Descent.logger:info("Registering MC_POST_RENDER callback...")
-Descent:AddCallback(ModCallbacks.MC_POST_RENDER, Descent.POST_RENDER)
-
-Descent.logger:info("Registering MC_POST_UPDATE callback...")
-Descent:AddCallback(ModCallbacks.MC_POST_UPDATE, Descent.POST_UPDATE)
-
-Descent.logger:info("Callbacks registered!")
-Descent.logger:info(string.format("Decision Descent v%s loaded!", version))
+DescentIsaac:prepare()
+DescentIsaac:initialize()
+DescentIsaac:schedule()
+DescentIsaac:registerCallbacks()
