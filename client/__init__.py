@@ -38,7 +38,8 @@ class DescentClient(utils.dataclasses.Extension):
     WEBSITE = QtCore.QUrl('https://github.com/sirrandoo/decision-descent')
     DOCUMENTATION = QtCore.QUrl('https://github.com/sirrandoo/decision-descent/wiki')
     AUTHORS = {'SirRandoo'}
-    
+
+    # noinspection PyProtectedMember
     def __post_init__(self, parent: QtCore.QObject = None):
         # Super call
         super(DescentClient, self).__post_init__(parent=parent)
@@ -48,6 +49,8 @@ class DescentClient(utils.dataclasses.Extension):
         
         # Internal calls
         self._arbiter.pollCreated.connect(self.broadcast)
+        self.bot.aboutToStart.connect(self._arbiter._http.connect)
+        self.bot.aboutToStop.connect(self._arbiter._http.disconnect)
     
     # Settings methods
     def register_settings(self):
