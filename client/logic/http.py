@@ -31,6 +31,9 @@ from PyQt5 import QtCore, QtNetwork
 
 from .. import dataclasses as descent_dataclasses
 
+if typing.TYPE_CHECKING:
+    from core.utils import custom
+
 __all__ = ['HTTP']
 
 
@@ -51,7 +54,6 @@ class HTTP(QtCore.QObject):
         super(HTTP, self).__init__(parent=parent)
         
         # Internal attributes
-        self._port = 25565
         self._socket: QtNetwork.QTcpServer = QtNetwork.QTcpServer(parent=self)
         self._client: typing.Optional[QtNetwork.QTcpSocket] = None
         
@@ -65,17 +67,22 @@ class HTTP(QtCore.QObject):
         self._socket.setMaxPendingConnections(2)
     
     # Connection methods
-    def connect(self, *, port: int = None):
+    def connect(self):
         """Connects the socket to the specified host and port.  If host and port
         are omitted, the most recent host:port will be used."""
-        self._port = self._port if port is None else port
-        
-        if not self._socket.listen(QtNetwork.QHostAddress.LocalHost, self._port):
-            self.LOGGER.critical(f'Could not create a server on port {self._port}')
+        app: custom.QApplication = custom.QApplication.instance()
+        port = app.client.settings['extensions']['descentisaac']['http']['port'].value
+
+        if not self._socket.listen(QtNetwork.QHostAddress.LocalHost, port):
+            self.LOGGER.critical(f'Could not create a server on port {port}')
             return self.LOGGER.critical(f'Error message:  {self._socket.errorString()}')
-        
-        self.LOGGER.info(f'Client bound to port {self._port}')
+
+        self.LOGGER.info(f'Client bound to port {port}')
         self.LOGGER.debug(f'Full connection address: {self._socket.serverAddress()}:{self._socket.serverPort()}')
+
+    def disconnect(self):
+        """Disconnects the socket."""
+        self._socket.disconnect()
     
     def send_message(self, message: descent_dataclasses.Message):
         """Sends a message to any connected clients."""
