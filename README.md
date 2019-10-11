@@ -1,10 +1,7 @@
-<p align="center">
-<img src="resources/assets/logo.png">
-</p>
+<p align="center"><img src="client/resources/assets/logo.png"></p>
 
 
 # What is Decision Descent?
 
-Decision Descent is a way for viewers in stream chats to decide how runs in Isaac 
-should go.  While this is inspired by Choice Chamber, Decision Descent tries to 
-differ from it.
+Decision Descent is a mod for [The Binding of Isaac: Afterbirth+](https://store.steampowered.com/app/570660/The_Binding_of_Isaac_Afterbirth/)
+that allows stream chat to influence the game.
