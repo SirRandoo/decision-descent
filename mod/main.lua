@@ -653,7 +653,8 @@ end
 
 --[[  Main  ]]--
 
-DescentIsaac:prepare()
-DescentIsaac:initialize()
-DescentIsaac:schedule()
-DescentIsaac:registerCallbacks()
+local inst = DescentIsaac.create();
+inst:prepare()
+inst:initialize()
+inst:schedule()
+inst:registerCallbacks()

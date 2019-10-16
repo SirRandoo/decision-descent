@@ -99,7 +99,7 @@ return {
     ---@return Logger
     getLogger = function(name)
         if not name then name = "root" end
-        if loggers[name] == nil then loggers[name] = logger.new(name) end
+        if loggers[name] == nil then loggers[name] = Logger.new(name) end
         
         return loggers[name]
     end,
