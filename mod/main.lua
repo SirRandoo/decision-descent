@@ -291,7 +291,7 @@ end
 ---
 function DescentIsaac:initialize()
     self.logger:info("Initializing Decision Descent...")
-    self.logger:info(string.format("Decision Descent v%s", tostring(self.metadata.getVersion())))
+    self.logger:info(string.format("Decision Descent v%s", tostring(self.metadata:getVersion())))
     
     if not self.scheduler.running then
         self.logger:info("Starting scheduler...")
