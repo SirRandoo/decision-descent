@@ -230,8 +230,6 @@ intents["player.grant.devil"] = function(collectible)
         end
     end
     
-    if player:GetPlayerType() == PlayerType.PLAYER_THEFORGOTTEN then player:GetSubPlayer() end
-    
     if player:GetPlayerType() ~= PlayerType.PLAYER_THELOST then
         if player:GetMaxHearts() > price or (player:GetSoulHearts() > 0 and player:GetMaxHearts() > 0) then
             player:AddMaxHearts(-price)
@@ -242,6 +240,8 @@ intents["player.grant.devil"] = function(collectible)
     
             spawnOrGiveCollectible(collectible)
         end
+    else
+        spawnOrGiveCollectible(collectible)
     end
 end
 
