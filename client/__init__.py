@@ -32,6 +32,7 @@ from core import utils
 from QtUtilities import settings as qsettings
 
 
+# noinspection PyProtectedMember
 class DescentClient(utils.dataclasses.Extension):
     DISPLAY_NAME = 'Decision Descent'
     VERSION = QtCore.QVersionNumber(1, 0, 0)
@@ -39,18 +40,12 @@ class DescentClient(utils.dataclasses.Extension):
     DOCUMENTATION = QtCore.QUrl('https://github.com/sirrandoo/decision-descent/wiki')
     AUTHORS = {'SirRandoo'}
 
-    # noinspection PyProtectedMember
     def __post_init__(self, parent: QtCore.QObject = None):
         # Super call
         super(DescentClient, self).__post_init__(parent=parent)
         
         # Internal attributes
         self._arbiter = logic.Arbiter(self.bot, parent=self)
-        
-        # Internal calls
-        self._arbiter.pollCreated.connect(self.broadcast)
-        self.bot.aboutToStart.connect(self._arbiter._http.connect)
-        self.bot.aboutToStop.connect(self._arbiter._http.disconnect)
     
     # Settings methods
     def register_settings(self):
@@ -148,10 +143,13 @@ class DescentClient(utils.dataclasses.Extension):
         self.LOGGER.info('Setting up bindings...')
         
         self.LOGGER.debug('Binding ShovelBot.aboutToStart » HTTP.connect')
-        self.bot.aboutToStart.connect(self._http.connect)
+        self.bot.aboutToStart.connect(self._arbiter._http.connect)
         
         self.LOGGER.debug('Binding ShovelBot.aboutToStop » HTTP.disconnect')
-        self.bot.aboutToStop.connect(self._http.disconnect)
+        self.bot.aboutToStop.connect(self._arbiter._http.disconnect)
+
+        self.LOGGER.debug('Binding Arbiter.pollCreated » DescentIsaac.broadcast')
+        self._arbiter.pollCreated.connect(self.broadcast)
         
         self.set_state(utils.enums.ExtensionStates.SET_UP)
         self.LOGGER.info(f'{self.DISPLAY_NAME} successfully set up!')
