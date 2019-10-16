@@ -107,7 +107,7 @@ function Scheduler:start()
         end
     end)
     
-    coroutine.start(self.thread)
+    coroutine.resume(self.thread)
 end
 
 ---
