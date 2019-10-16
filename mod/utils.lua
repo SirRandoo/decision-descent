@@ -58,6 +58,8 @@ function Logger:format(level, message)
             t = string.gsub(t, p, message)
         end
     end
+    
+    return t
 end
 
 ---@param level string
