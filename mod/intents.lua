@@ -54,6 +54,24 @@ local function spawnOrGiveCollectible(collectible, forceSpawn)
     end
 end
 
+local function spawnOrGiveTrinket(trinket, forceSpawn)
+    if tonumber(trinket) ~= nil then trinket = tonumber(trinket) end
+    if type(trinket) == "string" then trinket = Isaac.GetItemIdByName(trinket) end
+    
+    local player = Isaac.GetPlayer(0)
+    local game = Game()
+    
+    if trinket > 0 then
+        if player:GetTrinket(0) == -1 and not forceSpawn then
+            player:AddTrinket(trinket)
+        elseif player:GetMaxTrinkets() > 1 and player:GetTrinket(1) == -1 then
+            player:AddTrinket(trinket)
+        else
+            game:Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_TRINKET, spawnLocation, Vector(0, 0), player, trinket, room:GetAwardSeed())
+        end
+    end
+end
+
 
 --[[  Intents  ]]--
 ---
@@ -235,9 +253,7 @@ intents["player.grant.trinket"] = function(trinket)
     if tonumber(trinket) ~= nil then trinket = tonumber(trinket) end
     if type(trinket) == "string" then trinket = Isaac.GetTrinketIdByName(trinket) end
     
-    local player = Isaac.GetPlayer(0)
-    
-    if trinket > 0 then player:AddTrinket(trinket) end
+    if trinket > 0 then spawnOrGiveTrinket(trinket) end
 end
 
 ---
