@@ -94,7 +94,7 @@ class DescentClient(utils.dataclasses.Extension):
         }
         
         # rng.rooms
-        top['rng'].add_child(
+        top['rng'].add_children(
             qsettings.Setting('rooms', tooltip='Settings related to the room RNG aspect of the mod.'),
             qsettings.Setting('items', tooltip='Settings related to the item RNG aspect of the mod.')
         )
