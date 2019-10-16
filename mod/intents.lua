@@ -32,6 +32,7 @@
 local function spawnOrGiveCollectible(collectible, forceSpawn)
     if tonumber(collectible) ~= nil then collectible = tonumber(collectible) end
     if type(collectible) == "string" then collectible = Isaac.GetItemIdByName(collectible) end
+    
     local itemConfig = Isaac.GetItemConfig()
     local player = Isaac.GetPlayer(0)
     local game = Game()
@@ -39,8 +40,8 @@ local function spawnOrGiveCollectible(collectible, forceSpawn)
     
     if collectible > 0 then
         local collectibleData = itemConfig:GetCollectible(collectible)
-        
-        if collectibleData.Type == ItemType.ITEM_ACTIVE then
+    
+        if collectibleData.Type == ItemType.ITEM_ACTIVE or forceSpawn then
             local room = game:GetRoom()
             local spawnLocation = room:FindFreePickupSpawnPosition(player.Position, 1, true)
             
@@ -49,23 +50,6 @@ local function spawnOrGiveCollectible(collectible, forceSpawn)
             player:AddCollectible(collectible, 0)
         end
         
-        itemPool:RemoveCollectible(collectible)
-    end
-end
-
-local function spawn(collectible)
-    if tonumber(collectible) ~= nil then collectible = tonumber(collectible) end
-    if type(collectible) == "string" then collectible = Isaac.GetItemIdByName(collectible) end
-    
-    local player = Isaac.GetPlayer(0)
-    local game = Game()
-    local itemPool = game:GetItemPool()
-    
-    if collectible > 0 then
-        local room = game:GetRoom()
-        local spawnLocation = room:FindFreePickupSpawnPosition(player.Position, 1, true)
-        
-        game:Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_COLLECTIBLE, spawnLocation, Vector(0, 0), player, collectible, room:GetAwardSeed())
         itemPool:RemoveCollectible(collectible)
     end
 end
@@ -195,7 +179,7 @@ intents["player.grant.collectible"] = function(collectible)
     if tonumber(collectible) ~= nil then collectible = tonumber(collectible) end
     if type(collectible) == "string" then collectible = Isaac.GetItemIdByName(collectible) end
     
-    spawnOrGive(collectible)
+    spawnOrGiveCollectible(collectible)
 end
 
 ---
@@ -233,12 +217,12 @@ intents["player.grant.devil"] = function(collectible)
     if player:GetPlayerType() ~= PlayerType.PLAYER_THELOST then
         if player:GetMaxHearts() > price or (player:GetSoulHearts() > 0 and player:GetMaxHearts() > 0) then
             player:AddMaxHearts(-price)
-            
-            spawnOrGive(collectible)
+    
+            spawnOrGiveCollectible(collectible)
         elseif player:GetSoulHearts() > 6 or hasExtraLives or grantsHealth or grantsLives then
             player:AddSoulHearts(-6)
-            
-            spawnOrGive(collectible)
+    
+            spawnOrGiveCollectible(collectible)
         end
     end
 end
