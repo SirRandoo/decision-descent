@@ -1,3 +1,17 @@
+# Decision Descent v0.6.0
+
+* Fixed multiple errors in both halves that prevented either from loading.
+* Added docstrings to `config.lua`, and `constants.lua`.
+* Added descriptions to the docstrings in all objects in `scheduler.lua`, `http.lua`, `utils.lua`, and `intents.lua`.
+* Migrated signal binding to the extension's `setup` method.
+* Remapped heart query intents from `player.query.heart.HEART.pickable` → `player.query.heart.HEART.obtainable`.
+* Fixed potential error for devil poll rewards while playing as The Forgotten.
+* Merged functionality of `intents.spawn(COLLECTIBLE_ID)` into `intents.spawnOrGive(COLLECTIBLE_ID, FORCE_SPAWN)`.
+* Removed hardcoded revive item table from `player.grant.devil` in favor of `config.lua`'s `config.rng.items` item defs.
+* Fixed potential error for health adding intents while playing as The Forgotten.
+* Fixed potential error for health removal intents while playing as The Forgotten.
+
+
 # Decision Descent v0.5.0
 
 * A complete rewrite of the mod to use [ShovelBot](https://github.com/sirrandoo/shovelbot) instead of reimplementing the same framework.
