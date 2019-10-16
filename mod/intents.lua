@@ -20,6 +20,7 @@
 -- Descent.                                    --
 -- If not, see <http://www.gnu.org/licenses/>. --
 -------------------------------------------------
+local config = require("config")
 
 ---
 --- A utility function for awarding players items.
@@ -215,16 +216,9 @@ intents["player.grant.devil"] = function(collectible)
     local grantsHealth = (item.AddMaxHearts + item.AddSoulHearts + item.AddBlackHearts) > 0
     local grantsLives = false
     local hasExtraLives = player:GetExtraLives() > 0
-    local revivable = {
-        CollectibleType.COLLECTIBLE_DEAD_CAT,
-        CollectibleType.COLLECTIBLE_ONE_UP,
-        CollectibleType.COLLECTIBLE_LAZARUS_RAGS,
-        CollectibleType.COLLECTIBLE_JUDAS_SHADOW,
-        CollectibleType.COLLECTIBLE_ANKH
-    }
     
-    for a = 1, #revivable do
-        if collectible == revivable[a] then
+    for k, v in ipairs(config.rng.items) do
+        if v.revive and collectible == tonumber(k) then
             grantsLives = true
             break
         end
