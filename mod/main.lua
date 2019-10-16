@@ -26,13 +26,13 @@
 ------------------------------------------------
 
 --[[ Imports ]]--
-local statusConfig, config = require("config")
-local statusJson, json = require("json")
-local statusHttp, http = require("http")
-local statusUtils, utils = require("utils")
-local statusIntents, _ = require("intents")
-local statusScheduler, scheduler = require("scheduler")
-local statusConstants, const = require("constants")
+local statusConfig, config = pcall(require, "config")
+local statusJson, json = pcall(require, "json")
+local statusHttp, http = pcall(require, "http")
+local statusUtils, utils = pcall(require, "utils")
+local statusIntents, _ = pcall(require, "intents")
+local statusScheduler, scheduler = pcall(require, "scheduler")
+local statusConstants, const = pcall(require, "constants")
 
 
 --[[ Environment Validation ]]--
