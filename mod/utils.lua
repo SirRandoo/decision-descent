@@ -37,8 +37,10 @@ Logger.__index = Logger
 ---@return Logger
 function Logger.new(name)
     if not name then name = "root" end
+    local self = { name = name, fmt = "[{name}][{level}] {message}" }
+    setmetatable(self, Logger)
     
-    return setmetatable({ name = name, fmt = "[{name}][{level}] {message}" }, Logger)
+    return self
 end
 
 ---@param level string

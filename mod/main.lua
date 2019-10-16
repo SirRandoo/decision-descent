@@ -163,7 +163,10 @@ Version.__index = Version
 ---@param minor number
 ---@param micro number
 function Version.new(major, minor, micro)
-    return setmetatable({ major = major, minor = minor, micro = micro }, Version)
+    local self = { major = major, minor = minor, micro = micro }
+    setmetatable(self, Version)
+    
+    return self
 end
 
 ---
@@ -192,16 +195,10 @@ Metadata.__index = Metadata
 ---@param api number
 ---@return Metadata
 function Metadata.new(id, name, version, api)
-    return setmetatable(
-            {
-                id = id,
-                name = name,
-                version = version,
-                api = api,
-                __newindex = function(table, key, value) end
-            },
-            Metadata
-    )
+    local self = { id = id, name = name, version = version, api = api }
+    setmetatable(self, Metadata)
+    
+    return self
 end
 
 ---
@@ -246,17 +243,17 @@ DescentIsaac.__index = DescentIsaac
 ---
 ---@return DescentIsaac
 function DescentIsaac.create()
-    return setmetatable(
-            {
-                inst = nil,
-                scheduler = scheduler.new(),
-                logger = utils.getLogger(const.meta.id),
-                http = http.create(),
-                state = const.states.NONE,
-                metadata = Metadata.new(const.meta.id, const.meta.name, Version.fromString(const.meta.version), 1.0)
-            },
-            DescentIsaac
-    )
+    local self = {
+        inst = nil,
+        scheduler = scheduler.new(),
+        logger = utils.getLogger(const.meta.id),
+        http = http.create(),
+        state = const.states.None,
+        metadata = Metadata.new(const.meta.id, const.meta.name, Version.fromString(const.meta.version), 1.0)
+    }
+    setmetatable(self, DescentIsaac)
+    
+    return self
 end
 
 ---

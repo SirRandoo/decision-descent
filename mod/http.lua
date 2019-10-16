@@ -61,18 +61,18 @@ PseudoWS.__index = PseudoWS
 ---@return PseudoWS
 ---@see PseudoWS#connect
 function PseudoWS.create()
-    return setmetatable(
-            {
-                host = "",
-                port = 0,
-                socket = nil,
-                listener = nil,
-                manager = nil,
-                logger = utils.getLogger(const.meta.id .. ".http"),
-                intents = require("intents")
-            },
-            PseudoWS
-    )
+    local self = {
+        host = "",
+        port = 0,
+        socket = nil,
+        listener = nil,
+        manager = nil,
+        logger = utils.getLogger(const.meta.id .. ".http"),
+        intents = require("intents")
+    }
+    setmetatable(self, PseudoWS)
+    
+    return self
 end
 
 ---

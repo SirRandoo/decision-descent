@@ -36,7 +36,10 @@ Task.__index = {}
 ---@param p boolean  @An indicator that this task should rejoin the queue once the function has been called.
 ---@return Task
 function Task.new(f, p)
-    return setmetatable({ func = f, persist = p, __call = f, __newindex = function() end }, Task)
+    local self = { func = f, persist = p, __call = f, __newindex = function() end }
+    setmetatable(self, Task)
+    
+    return self
 end
 
 ---
@@ -62,14 +65,10 @@ Scheduler.__index = Scheduler
 ---
 ---@return Scheduler
 function Scheduler.new()
-    return setmetatable(
-            {
-                tasks = {},
-                thread = nil,
-                running = false
-            },
-            Scheduler
-    )
+    local self = { tasks = {}, thread = nil, running = false }
+    setmetatable(self, Scheduler)
+    
+    return self
 end
 
 ---
