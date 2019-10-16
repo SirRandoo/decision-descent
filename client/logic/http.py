@@ -57,10 +57,6 @@ class HTTP(QtCore.QObject):
         self._socket: QtNetwork.QTcpServer = QtNetwork.QTcpServer(parent=self)
         self._client: typing.Optional[QtNetwork.QTcpSocket] = None
         
-        # Aliases
-        qt_disconnect = super(HTTP, self).disconnect
-        qt_connect = super(HTTP, self).connect
-        
         # Internal calls
         self._socket.newConnection.connect(self.process_new_client)
         self._socket.acceptError.connect(self.process_connection_error)
