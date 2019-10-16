@@ -26,6 +26,9 @@
 ---@type table<string, Logger>
 local loggers = {}
 
+---
+--- A class for displaying simple formatted log statements to Isaac's log file.
+---
 ---@class Logger
 ---
 ---@field fmt string  @The format to use for log messages
@@ -43,6 +46,9 @@ function Logger.new(name)
     return self
 end
 
+---
+--- Formats log message components into the format defined in `fmt`.
+---
 ---@param level string
 ---@param message string
 ---@return string
@@ -64,29 +70,47 @@ function Logger:format(level, message)
     return t
 end
 
+---
+--- Displays a log statement to the Isaac log file.
+---
 ---@param level string
 ---@param message string
 function Logger:log(level, message) Isaac.DebugString(self:format(level, message)) end
 
+---
+--- Displays a DEBUG log statement to the Isaac log file.
+---
 ---@param message string
-function Logger:debug(message)	self:log("DEBUG", message) end
+function Logger:debug(message) self:log("DEBUG", message) end
 
+---
+--- Displays an INFO log statement to the Isaac log file.
+---
 ---@param message string
 function Logger:info(message) self:log("INFO", message) end
 
+---
+--- Displays a WARNING log statement to the Isaac log file.
+---
 ---@param message string
 function Logger:warning(message) self:log("WARNING", message) end
 
+---
+--- Displays an ERROR log statement to the Isaac log file.
+---
 ---@param message string
 function Logger:error(message) self:log("ERROR", message) end
 
+---
+--- Displays a CRITICAL log statement to the Isaac log file.
+---
 ---@param message string
 function Logger:critical(message) self:log("CRITICAL", message) end
 
-
-
-
 return {
+    ---
+    --- Separates an intent string into segments.
+    ---
     ---@param intent string
     ---@return table<string>
     splitIntent = function(intent)
@@ -99,6 +123,11 @@ return {
         return segments
     end,
     
+    ---
+    --- Gets a logger.
+    ---
+    --- If the logger doesn't exist, a new one will be created.
+    ---
     ---@param name string
     ---@return Logger
     getLogger = function(name)

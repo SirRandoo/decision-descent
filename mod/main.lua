@@ -182,6 +182,10 @@ function Version.fromString(version)
     return t
 end
 
+---@field id string
+---@field name string
+---@field version Version
+---@field api Version
 ---@class Metadata
 local Metadata = {}
 Metadata.__index = Metadata
@@ -572,7 +576,7 @@ function DescentIsaac.MC_POST_RENDER()
                     if entity.Position.X == rCenter.X then
                         DescentIsaac.logger:warning("Collectible is within deletion zone!")
                         DescentIsaac.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
-        
+    
                         entity.Remove()
                     end
                 end
