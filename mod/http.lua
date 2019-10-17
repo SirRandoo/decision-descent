@@ -103,13 +103,6 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
     -- Send the message to the other side.
     local s, m = self.socket:send(json.encode(payload))
     
-    if not s and (m == "closed" or m == "Socket is not connected") then
-        self:connect("127.0.0.1", config.http.port)
-        self:sendMessage(intent, arguments, kwargs, reply)
-        
-        return
-    end
-    
     -- If the message couldn't be sent, we'll log the error.
     if not s then
         self.logger:warning("Could not send message to client!")
@@ -198,21 +191,20 @@ end
 ---
 function PseudoWS:processMessage()
     -- Attempt to retrieve a line from the socket.
-    local s, m = self.socket:receive()
+    local message, recStatus = self.socket:receive()
     
     -- If we couldn't read from the socket, we'll log it, then return.
-    if s == nil and m ~= "timeout" then
-        self.logger:warning("Could not retrieve from socket!  Reason: " .. tostring(m))
-        
-        if m == "closed" then
-            self:connect("127.0.0.1", config.http.port)
-        end
+    if recStatus == 'closed' then
+        self.logger:warning("Connection closed!  Reconnecting...")
+        self:connect("127.0.0.1", config.host.port)
     end
-    if s == '' or (s == nil and m == "timeout") then return end  -- Ignore empty responses
+    
+    if recStatus == 'timeout' then return end
+    if message == '' or message == nil then return end  -- Ignore empty responses
     
     -- If we could successfully read from the socket, we'll dispatch the payload.
-    self.logger:info("Retrieved message: " .. tostring(s))
-    self:dispatch(tostring(s))
+    self.logger:info("Retrieved message: " .. tostring(message))
+    self:dispatch(tostring(message))
 end
 
 ---
