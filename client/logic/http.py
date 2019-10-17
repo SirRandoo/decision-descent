@@ -113,18 +113,18 @@ class HTTP(QtCore.QObject):
     @catchable.signal
     def process_message(self):
         """Handles all messages received from the socket."""
-        if not self._client.canReadLine():
-            return self.LOGGER.info('Client has data available, but not open for reading!')
-        
         self.LOGGER.debug('Message received from socket!')
-        d = self._client.readLine().decode()
+        raw: QtCore.QByteArray = self._client.readLine()
+
+        if raw.isEmpty():
+            return self.LOGGER.warning('An empty message was sent!')
         
         try:
-            data = json.loads(d)
+            data = json.loads(raw.data().decode())
         
         except ValueError as e:
             self.LOGGER.warning(f'Received invalid JSON response from connected client!  {e!s}')
-            self.LOGGER.warning(f'Received "{d}"')
+            self.LOGGER.warning(f'Received "{raw.data().decode()}"')
         
         else:
             self.LOGGER.debug('Received payload from connected client!')
