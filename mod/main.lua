@@ -407,14 +407,19 @@ function DescentIsaac:generatePoll()
                 local iPool = game:GetItemPool()
                 local rng = RNG()
                 local choices = {}
-                
-                rng:SetSeed(rSeed)
-                
-                if config.polls == nil or config.polls.maximum_choices == nil then mChoices = 10 end
-                if config.polls.maximum_choices < 0 then mChoices = 10 end
-                if config.polls.maximum_choices >= 0 then mChoices = config.polls.maximum_choices end
-                
+    
+                self.logger:debug("Setting RNG seed...")
+                rng:SetSeed(rSeed, 0)
+    
+                self.logger:debug("Finding maximum number of choices...")
+                if config.polls == nil or config.polls.choices.maximum == nil then mChoices = 10 end
+                if config.polls.choices.maximum < 0 then mChoices = 10 end
+                if config.polls.choices.maximum >= 0 then mChoices = config.polls.choices.maximum end
+    
+                self.logger:debug("Getting room item pool...")
                 local rPool = iPool:GetPoolForRoom(rType, rSeed)
+    
+                self.logger:debug("Getting item defs for room...")
                 local rSpecs = config.rng.rooms[tostring(rType)]
                 
                 if rSpecs ~= nil and rng:RandomInt(rSpecs.maximum) > rSpecs.minimum then return end
@@ -424,8 +429,9 @@ function DescentIsaac:generatePoll()
                 -- have to constantly get new items until unique ones
                 -- pop up.
                 local t = 0
-                
-                while #choices < #mChoices do
+    
+                self.logger:debug("Gathering choices...")
+                while #choices < mChoices do
                     local c = iPool:GetCollectible(rPool, false, rSeed)
                     
                     if c == nil then t = t + 1 end
@@ -458,7 +464,8 @@ function DescentIsaac:generatePoll()
         
                     table.insert(aliases[dChoice], item.name)
                 end
-                
+    
+                self.logger:debug("Sending poll params...")
                 -- Time for the mess that is poll generation
                 if rSpecs == nil then
                     -- If there is no spec defined for the room, we'll use the defaults
