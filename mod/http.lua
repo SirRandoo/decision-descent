@@ -27,6 +27,7 @@ local socket = require("socket")
 local json = require("json")
 local utils = require("utils")
 local const = require("constants")
+local config = require("config")
 
 
 --[[ Types ]]--
@@ -100,6 +101,13 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
     
     -- Send the message to the other side.
     local s, m = self.socket:send(json.encode(payload))
+    
+    if not s and (m == "closed" or m == "Socket is not connected") then
+        self:connect("127.0.0.1", config.http.port)
+        self:sendMessage(intent, arguments, kwargs, reply)
+        
+        return
+    end
     
     -- If the message couldn't be sent, we'll log the error.
     if not s then
@@ -197,8 +205,14 @@ function PseudoWS:processMessage()
     local s, m = self.socket:receive()
     
     -- If we couldn't read from the socket, we'll log it, then return.
-    if s == nil then return self.logger:warning("Could not retrieve from socket!  Reason: " .. tostring(m)) end
-    if s == '' then return end  -- Ignore empty responses
+    if s == nil and m ~= "timeout" then
+        self.logger:warning("Could not retrieve from socket!  Reason: " .. tostring(m))
+        
+        if m == "closed" then
+            self:connect("127.0.0.1", config.http.port)
+        end
+    end
+    if s == '' or (s == nil and m == "timeout") then return end  -- Ignore empty responses
     
     -- If we could successfully read from the socket, we'll dispatch the payload.
     self.logger.info("Retrieved message: " .. tostring(s))
