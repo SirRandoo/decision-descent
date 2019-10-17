@@ -73,7 +73,8 @@ class Message:
             r = func(self.reply or 'ignore.this.message', *self.args, **self.kwargs)
         
         except Exception as e:
-            self.LOGGER.warning(f'Intent "{self.intent}" failed with the following errors:  {e.__class__}({e!s})')
+            self.LOGGER.warning(
+                f'Intent "{self.intent}" failed with the following errors:  {e.__class__.__name__}({e!s})')
             raise errors.DescentError from e
         
         else:
