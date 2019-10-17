@@ -124,8 +124,8 @@ class Arbiter(QtCore.QObject):
         """Requests the arbiter to create a new poll.
         
         :param callback: The intent to invoke when the poll conclude."""
-        p = self.create_poll(callback, *choices, **aliases)
-        p.start(self._client.settings['extensions']['descentisaac']['polls']['duration'].value)
+        p = self.add_poll(callback, *choices, **aliases)
+        p.start(self._client.settings['extensions']['descentclient']['polls']['duration'].value)
         
         self.pollCreated.emit(p)
     
@@ -133,8 +133,8 @@ class Arbiter(QtCore.QObject):
         """Requests the arbiter to create a new multi poll.
         
         :param callback: The intent to invoke when the poll concludes."""
-        p = self.create_multi_poll(callback, *choices, **aliases)
-        p.start(self._client.settings['extensions']['descentisaac']['polls']['duration'].value)
+        p = self.add_multi_poll(callback, *choices, **aliases)
+        p.start(self._client.settings['extensions']['descentclient']['polls']['duration'].value)
         
         self.pollCreated.emit(p)
     
