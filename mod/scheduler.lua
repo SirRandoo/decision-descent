@@ -26,6 +26,9 @@
 ------------------------------------------------
 
 ---@class Task
+---
+---@field func function
+---@field persist boolean
 local Task = {}
 Task.__index = {}
 
@@ -57,6 +60,7 @@ function Task:revivable() return p end
 ---@field tasks Task[]
 ---@field thread thread
 ---@field running boolean
+---@field logger Logger
 local Scheduler = {}
 Scheduler.__index = Scheduler
 
