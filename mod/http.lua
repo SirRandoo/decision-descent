@@ -210,7 +210,7 @@ function PseudoWS:processMessage()
     if s == '' or (s == nil and m == "timeout") then return end  -- Ignore empty responses
     
     -- If we could successfully read from the socket, we'll dispatch the payload.
-    self.logger.info("Retrieved message: " .. tostring(s))
+    self.logger:info("Retrieved message: " .. tostring(s))
     self:dispatch(tostring(s))
 end
 
@@ -233,7 +233,6 @@ function PseudoWS:connect(host, port)
     -- ensure the socket doesn't randomly close.
     if self.socket == nil then
         self.socket = socket.tcp()
-        self.socket:settimeout(0)
     
         if not self.socket:setoption("keepalive", true) then self.logger:warning("Could not set socket to \"keepalive\"!  The socket may unexpectedly close.") end
     end
@@ -242,11 +241,12 @@ function PseudoWS:connect(host, port)
     local s, m = self.socket:connect(self.host, tonumber(self.port))
     
     -- If we couldn't connect, we'll log it, then return.
-    if not s then
+    if s == nil then
         self.logger:warning(string.format("Could not connect to %s:%d !  Reason: %s", tostring(host), tonumber(port), tostring(m)))
         return m
     end
     
+    self.socket:settimeout(0)
     return tonumber(s) == 1  -- This should always be true, but we'll add this check just in case.
 end
 
