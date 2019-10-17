@@ -146,6 +146,19 @@ class DescentClient(utils.dataclasses.Extension):
                 if isinstance(ext, utils.dataclasses.Platform):
                     for choice in poll.get_choices():
                         ext.send_message(f'[#{choice.id}] {choice.name}')
+
+    def bind_to_platforms(self):
+        """Binds the `onMessage` signal from all platforms to this extension's
+        message handler."""
+        for ext in self.bot.extensions:
+            if isinstance(ext, utils.dataclasses.Platform):
+                ext.onMessage.connect(self.process_chat_message)
+
+    def process_chat_message(self, message: utils.dataclasses.Message):
+        """Processes a message from chat."""
+        for poll in self._arbiter.get_polls():
+            if poll.is_choice(message.content):
+                poll.add_participant(message.user.username, message.content)
     
     # Lifecycle methods
     def setup(self):
@@ -159,12 +172,7 @@ class DescentClient(utils.dataclasses.Extension):
         self.stitch_settings()
         
         self.LOGGER.info('Setting up bindings...')
-        
-        self.LOGGER.debug('Binding ShovelBot.aboutToStart » HTTP.connect')
-        self.bot.aboutToStart.connect(self._arbiter._http.connect)
-        
-        self.LOGGER.debug('Binding ShovelBot.aboutToStop » HTTP.disconnect')
-        self.bot.aboutToStop.connect(self._arbiter._http.disconnect)
+        self.bot.aboutToStart.connect(self.bind_to_platforms)
 
         self.LOGGER.debug('Binding Arbiter.pollCreated » DescentIsaac.broadcast')
         self._arbiter.pollCreated.connect(self.broadcast)
