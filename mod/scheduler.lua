@@ -24,6 +24,7 @@
 -- Decision Descent.  If not,
 -- see <https://www.gnu.org/licenses/>.
 ------------------------------------------------
+local utils = require("utils")
 
 ---@class Task
 ---
@@ -49,7 +50,7 @@ end
 --- Whether or not the task should be revived.
 ---
 ---@return boolean
-function Task:revivable() return p end
+function Task:revivable() return self.persist end
 
 ---
 --- Schedulers are responsible for managing methods that should be called away
@@ -69,7 +70,7 @@ Scheduler.__index = Scheduler
 ---
 ---@return Scheduler
 function Scheduler.new()
-    local self = { tasks = {}, thread = nil, running = false }
+    local self = { tasks = {}, thread = nil, logger = utils.getLogger("scheduler"), running = false }
     setmetatable(self, Scheduler)
     
     return self
@@ -100,11 +101,12 @@ function Scheduler:start()
         while self.running do
             if self.tasks then
                 local t = self.tasks[1]  ---@type Task
-                
-                pcall(t)
+                local status, result = pcall(t.func)
+    
+                if not status then self.logger:debug("Task failed! " .. tostring(status) .. "," .. tostring(result)) end
                 table.remove(self.tasks, 1)
-                
-                if t:revivable() then
+    
+                if t.persist then
                     table.insert(self.tasks, t)
                 end
             end
