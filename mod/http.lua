@@ -149,7 +149,7 @@ function PseudoWS:dispatch(payload)
     if not dPayload then return self.logger:warning(string.format("Could not dispatch payload \"%s\" !", payload)) end
     
     -- If the payload is a message from this half, we'll ignore it.
-    if dPayload.sender == const.sides.PYTHON then self.logger:info("Received payload from ourselves!  Ignoring...") end
+    if dPayload.sender == const.sides.ISAAC then self.logger:info("Received payload from ourselves!  Ignoring...") end
     
     self.logger:info(string.format("Processing payload with intent \"%s\" ...", dPayload.intent))
     
