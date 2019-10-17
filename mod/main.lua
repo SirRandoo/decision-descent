@@ -306,7 +306,7 @@ function DescentIsaac:initialize()
     
     if not self.http.socket then
         self.logger:info("Connecting to remote...")
-        self.http:connect()
+        self.http:connect(config.http.host, config.http.port)
     end
     
     self.state = const.states.SET_UP
