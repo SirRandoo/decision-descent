@@ -10,6 +10,26 @@
 * Removed hardcoded revive item table from `player.grant.devil` in favor of `config.lua`'s `config.rng.items` item defs.
 * Fixed potential error for health adding intents while playing as The Forgotten.
 * Fixed potential error for health removal intents while playing as The Forgotten.
+* Fixed `http.lua` causing errors by delayed setting the socket timeout to after the connection has been established.
+* Added HTTP settings to the bot settings.
+* Added chat listeners to ensure chat can actually vote on polls.
+* Renamed all loggers from `extensions.DescentIsaac` → `extensions.DescentClient` to reflect the extension's internal name as loaded by the bot.
+* Added catchable wrappers around `http.py`'s methods.
+* Migrated HTTP signal binding to the `Arbiter` class.
+* Fixed the poll generator crashing the mod.
+* Fixed the poll generator's maximum choice check referencing invalid settings.
+* Fixed the boss item janitor crashing the mod.
+* Fixed the poll generator not properly inserting choices into the choice cache.
+* Fixed `registerCallbacks` crashing the mod.
+* Simplified the socket read task.
+* Ensured `registerCallbacks` iterates over the proper variable.
+* Actually passed the HTTP config values to the `connect` method.
+* Migrated `Version.__tostring` to `Version:toString`.
+* Fixed `Version.fromString` not properly parsing the version.
+* Fixed `Task:revivable` referencing an invalid variable.
+* Added error handling support to the scheduler.
+* Migrated `settimeout` to after the socket connects.
+* Added generic support for all platforms that implement the `Platform` dataclass.
 
 
 # Decision Descent v0.5.0
