@@ -586,7 +586,7 @@ function DescentIsaac.MC_POST_RENDER()
                         Mod.logger:warning("Collectible is within deletion zone!")
                         Mod.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
     
-                        entity.Remove()
+                        entity:Remove()
                     end
                 end
             end
