@@ -62,6 +62,7 @@ class HTTP(QtCore.QObject):
         self._socket.setMaxPendingConnections(2)
     
     # Connection methods
+    @catchable.signal
     def connect(self):
         """Connects the socket to the specified host and port.  If host and port
         are omitted, the most recent host:port will be used."""
@@ -75,6 +76,7 @@ class HTTP(QtCore.QObject):
         self.LOGGER.info(f'Client bound to port {port}')
         self.LOGGER.debug(f'Full connection address: {self._socket.serverAddress()}:{self._socket.serverPort()}')
 
+    @catchable.signal
     def disconnect(self):
         """Disconnects the socket."""
         self._socket.disconnect()
@@ -100,6 +102,8 @@ class HTTP(QtCore.QObject):
         self.LOGGER.info(f'{sent} bytes sent!')
     
     # Slots
+    # noinspection PyTypeChecker
+    @catchable.signal
     def process_message(self):
         """Handles all messages received from the socket."""
         if not self._client.canReadLine():
@@ -118,7 +122,8 @@ class HTTP(QtCore.QObject):
         else:
             self.LOGGER.debug('Received payload from connected client!')
             self.onResponse.emit(descent_dataclasses.Message.from_json(data))
-    
+
+    @catchable.signal
     def process_new_client(self):
         """Called whenever the server receives a new connection!"""
         self.LOGGER.info('New connection received!')
@@ -135,7 +140,8 @@ class HTTP(QtCore.QObject):
         self._client = self._socket.nextPendingConnection()
         self._client.readyRead.connect(self.process_message)
         self.onConnectionReceived.emit()
-    
+
+    @catchable.signal
     def process_connection_error(self, error: int):
         """Called whenever an incoming connection results in an error."""
         self.LOGGER.warning('Connection failed!')
