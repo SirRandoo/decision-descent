@@ -176,11 +176,11 @@ class Arbiter(QtCore.QObject):
         
         for c, a in aliases.items():
             self.LOGGER.info(f'    • {c} → {", ".join(a)}')
-        
-        p = widgetz.Poll(parent=self)
+
+        p = widgetz.Poll(callback)
         
         for c in choices:
-            p.add_choice(c, *aliases.get(c, []))
+            p.add_choice(c, c, *aliases.get(c, []))
         
         self._polls.append(p)
         p.onConclude.connect(self.process_poll)
