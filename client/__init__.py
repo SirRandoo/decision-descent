@@ -123,7 +123,7 @@ class DescentClient(utils.dataclasses.Extension):
     # Platform methods
     def broadcast(self, poll: descent_widgets.Poll):
         """Broadcasts a new poll to all available platforms."""
-        if self.bot.settings['extensions']['descentisaac']['polls']['chat'].value:
+        if self.bot.settings['extensions']['descentclient']['polls']['chat'].value:
             for ext in self.bot.extensions:
                 if isinstance(ext, utils.dataclasses.Platform):
                     for choice in poll.get_choices():

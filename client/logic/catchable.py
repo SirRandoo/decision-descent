@@ -47,7 +47,7 @@ def signal(func: typing.Callable) -> typing.Callable:
                 return func()
         
         except errors.DescentError as e:
-            logging.getLogger("extensions.DescentIsaac.signal_catcher").exception(
+            logging.getLogger("extensions.DescentClient.signal_catcher").exception(
                 f'Execution of {func!s} failed!', exc_info=e
             )
     

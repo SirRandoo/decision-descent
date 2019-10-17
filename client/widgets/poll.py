@@ -66,7 +66,7 @@ class Choice:
 
 class Poll(QtWidgets.QWidget):
     """A semi-automated class for declaring chat polls."""
-    LOGGER = logging.getLogger('extensions.DescentIsaac.polls')
+    LOGGER = logging.getLogger('extensions.DescentClient.polls')
     onConclude = QtCore.pyqtSignal(str)
     
     def __init__(self, intent: str, *, parent: QtWidgets.QWidget = None):

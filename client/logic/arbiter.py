@@ -39,7 +39,7 @@ __all__ = ['Arbiter']
 
 class Arbiter(QtCore.QObject):
     """Synchronizes data between the client and mod."""
-    LOGGER = logging.getLogger("extensions.DescentIsaac.arbiter")
+    LOGGER = logging.getLogger("extensions.DescentClient.arbiter")
     
     pollCreated = QtCore.pyqtSignal(object)
     
