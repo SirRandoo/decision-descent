@@ -321,9 +321,7 @@ function DescentIsaac:schedule()
     self.logger:info("Scheduling reoccurring HTTP reader...")
     self.scheduler:schedule(
             function()
-                if self.http:processMessage() == 'closed' then
-                    self.http:connect()
-                end
+                self.http:processMessage()
             end,
             true
     )
