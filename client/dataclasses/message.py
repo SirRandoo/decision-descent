@@ -42,7 +42,7 @@ class Message:
     intent: str
     args: typing.Tuple[bases]
     kwargs: typing.Dict[str, bases]
-    reply: str
+    reply: typing.Optional[str]
     
     @classmethod
     def from_json(cls, message: dict) -> 'Message':
