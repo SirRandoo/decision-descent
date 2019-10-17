@@ -33,6 +33,7 @@ local loggers = {}
 ---
 ---@field fmt string  @The format to use for log messages
 ---@field name string  @The name of the logger
+---@field file file  @The file to output log statements to
 local Logger = {}
 Logger.__index = Logger
 
@@ -40,10 +41,20 @@ Logger.__index = Logger
 ---@return Logger
 function Logger.new(name)
     if not name then name = "root" end
-    local self = { name = name, fmt = "[{name}][{level}] {message}" }
+    local self = { name = name, fmt = "[{name}][{level}] {message}", file = nil }
     setmetatable(self, Logger)
     
     return self
+end
+
+---
+--- Sets the file all log statements will be outputted to.
+---
+--- If file is `nil`, log statements will be outputted to Isaac's log file.
+---
+---@param file file  @A file handle to use for writing.
+function Logger:toFile(file)
+    self.file = file
 end
 
 ---
@@ -71,41 +82,63 @@ function Logger:format(level, message)
 end
 
 ---
---- Displays a log statement to the Isaac log file.
+--- Writes a log statement to the log file.
 ---
 ---@param level string
 ---@param message string
-function Logger:log(level, message) Isaac.DebugString(self:format(level, message)) end
+function Logger:log(level, message)
+    local f = Isaac.DebugString
+    
+    if self.file ~= nil then f = self.file.write end
+    
+    f(self:format(level, message))
+end
 
 ---
---- Displays a DEBUG log statement to the Isaac log file.
+--- Displays a DEBUG log statement to the log file.
 ---
 ---@param message string
 function Logger:debug(message) self:log("DEBUG", message) end
 
 ---
---- Displays an INFO log statement to the Isaac log file.
+--- Displays an INFO log statement to the log file.
 ---
 ---@param message string
 function Logger:info(message) self:log("INFO", message) end
 
 ---
---- Displays a WARNING log statement to the Isaac log file.
+--- Displays a WARNING log statement to the log file.
 ---
 ---@param message string
 function Logger:warning(message) self:log("WARNING", message) end
 
 ---
---- Displays an ERROR log statement to the Isaac log file.
+--- Displays an ERROR log statement to the log file.
 ---
 ---@param message string
 function Logger:error(message) self:log("ERROR", message) end
 
 ---
---- Displays a CRITICAL log statement to the Isaac log file.
+--- Displays a CRITICAL log statement to the log file.
 ---
 ---@param message string
 function Logger:critical(message) self:log("CRITICAL", message) end
+
+--[[ Library Variables ]]--
+
+local logFile
+
+
+--[[ Functions ]]--
+
+---
+--- Gets the directory this file is currently in.
+---
+---@return string
+local function getDirectory()
+    return debug.getinfo(1, 'S').source:sub(2):match('(.*[/\\])')
+end
+
 
 return {
     ---
@@ -130,9 +163,16 @@ return {
     ---
     ---@param name string
     ---@return Logger
-    getLogger = function(name)
+    getLogger = function(name, file)
         if not name then name = "root" end
+        if not file then
+            if not logFile then logFile = io.open(getDirectory() .. "/log.txt", "w") end
+        
+            file = logFile
+        end
+        
         if loggers[name] == nil then loggers[name] = Logger.new(name) end
+        if file ~= nil then loggers[name]:toFile(file) end
         
         return loggers[name]
     end,
