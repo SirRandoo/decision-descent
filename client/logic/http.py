@@ -85,6 +85,7 @@ class HTTP(QtCore.QObject):
     @catchable.signal
     def disconnect(self):
         """Disconnects the socket."""
+        self.LOGGER.warning('Disconnecting server...')
         self._socket.disconnect()
     
     def send_message(self, message: descent_dataclasses.Message):
