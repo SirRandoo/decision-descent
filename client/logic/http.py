@@ -29,10 +29,9 @@ import typing
 
 from PyQt5 import QtCore, QtNetwork
 
+from core.utils import custom
+from . import catchable
 from .. import dataclasses as descent_dataclasses
-
-if typing.TYPE_CHECKING:
-    from core.utils import custom
 
 __all__ = ['HTTP']
 
