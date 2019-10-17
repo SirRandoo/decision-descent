@@ -518,8 +518,8 @@ local Mod = DescentIsaac.create()
 function DescentIsaac.MC_POST_GAME_STARTED(isSave)
     if isSave then return end
     
-    DescentIsaac.scheduler:schedule(function()
-        DescentIsaac.http:sendMessage("polls.delete", { "*" })
+    Mod:schedule(function()
+        Mod:sendMessage("polls.delete", { "*" })
     end, false)
 end
 
@@ -531,8 +531,8 @@ end
 ---
 function DescentIsaac.MC_PRE_GAME_EXIT(shouldSave)
     if shouldSave then
-        DescentIsaac.scheduler:schedule(function()
-            DescentIsaac.http:sendMessage("client.close")
+        Mod:schedule(function()
+            Mod:sendMessage("client.close")
         end, false)
     end
 end
@@ -544,8 +544,8 @@ end
 --- changed levels.
 ---
 function DescentIsaac.MC_POST_NEW_LEVEL()
-    DescentIsaac.scheduler:schedule(function()
-        DescentIsaac.http:sendMessage("client.state.level.changed")
+    Mod:schedule(function()
+        Mod:sendMessage("client.state.level.changed")
     end, false)
 end
 
@@ -579,12 +579,12 @@ function DescentIsaac.MC_POST_RENDER()
         
             for _, entity in pairs(entities) do
                 if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_COLLECTIBLE then
-                    if DescentIsaac.metadata.getVersion().major < 0 then Isaac.RenderText("+", entity.Position.X, entity.Position.Y, 1.0, 1.0, 1.0, 1.0) end
+                    if Mod.metadata:getVersion().major < 0 then Isaac.RenderText("+", entity.Position.X, entity.Position.Y, 1.0, 1.0, 1.0, 1.0) end
     
                     -- TODO: Currently, this only works if the player doesn't have "more options"
                     if entity.Position.X == rCenter.X then
-                        DescentIsaac.logger:warning("Collectible is within deletion zone!")
-                        DescentIsaac.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
+                        Mod.logger:warning("Collectible is within deletion zone!")
+                        Mod.logger:warning(string.format("Removing collectible #%s...", tostring(entity.SubType)))
     
                         entity.Remove()
                     end
@@ -601,8 +601,8 @@ end
 --- player enters a *new*, supported room.
 ---
 function DescentIsaac.MC_POST_NEW_ROOM()
-    DescentIsaac.scheduler.schedule(function()
-        DescentIsaac.http:sendMessage("client.state.room.changed")
+    Mod.scheduler.schedule(function()
+        Mod.http:sendMessage("client.state.room.changed")
     end, false)
     
     local game = Game()
@@ -622,30 +622,30 @@ function DescentIsaac.MC_POST_NEW_ROOM()
     if lType == LevelStage.STAGE7 then
         -- The Void checks
         if supported and cRoom:GetDeliriumDistance() > 0 then
-            DescentIsaac:generatePoll()
+            Mod:generatePoll()
         end
     elseif lType == LevelStage.STAGE5 or lType == LevelStage.STAGE6 then
         if supported and not cRoom:IsCurrentRoomLastBoss() then
             -- Ignore Isaac/Satan boss room
-            DescentIsaac:generatePoll()
+            Mod:generatePoll()
         end
     elseif lType == LevelStage.STAGE3_2 or (lType == LevelStage.STAGE3_1 and cLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
         if supported and not cRoom:IsCurrentRoomLastBoss() then
             -- Ignore the Mom boss room
-            DescentIsaac:generatePoll()
+            Mod:generatePoll()
         end
     elseif lType == LevelStage.STAGE4_2 or (lType == LevelStage.STAGE4_1 and cLevel:GetCurses() == LevelCurse.CURSE_OF_LABYRINTH) then
         if supported and not currentRoom:IsCurrentRoomLastBoss() then
             -- Ignore the It Lives! / Mom's Heart boss room
-            DescentIsaac:generatePoll()
+            Mod:generatePoll()
         end
     elseif lType == LevelStage.STAGE4_3 then
         if supported and rType ~= RoomType.ROOM_BOSS then
             -- Ignore Hushy's room
-            DescentIsaac:generatePoll()
+            Mod:generatePoll()
         end
     elseif supported then
-        DescentIsaac:generatePoll()
+        Mod:generatePoll()
     end
 end
 
@@ -656,15 +656,14 @@ end
 ---
 function DescentIsaac.MC_POST_UPDATE()
     if Isaac.GetFrameCount() % 30 == 0 then
-        DescentIsaac.scheduler:start()  -- Ensure the scheduler is always running
+        Mod.scheduler:start()  -- Ensure the scheduler is always running
     end
 end
 
 
 --[[  Main  ]]--
 
-local inst = DescentIsaac.create();
-inst:prepare()
-inst:initialize()
-inst:schedule()
-inst:registerCallbacks()
+Mod:prepare()
+Mod:initialize()
+Mod:schedule()
+Mod:registerCallbacks()
