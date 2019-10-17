@@ -169,33 +169,16 @@ function PseudoWS:dispatch(payload)
     
     self.logger:info(string.format("Processing payload with intent \"%s\" ...", dPayload.intent))
     
-    self.logger:debug("Splitting intent into segments...")
-    local segs = {}  ---@type string[]
-    local c = self.intents
-    
-    -- Split the intent into segments, and insert them into the above array for use momentarily.
-    for s in string.gmatch(dPayload.intent, "%w+") do segs[#segs] = s end
-    
-    -- Attempt to locate the intent in the intent database
-    self.logger:debug("Attempting to find intent...")
-    
-    while #segs > 0 do
-        local seg = segs[1]
-        
-        if c[seg] == nil then return self.logger:warning(string.format("Could not locate intent \"%s\" !", dPayload.intent)) end
-        if type(c[seg]) == "function" then return self.logger:warning(string.format("Intent \"%s\" has no callable!", dPayload.intent)) end
-        
-        c = c[seg]
-        table.remove(segs, 1)
-    end
-    
+    local ref = self.intents[dPayload.intent]
+    if ref == nil then return self.logger:warning(string.format("Intent \"%s\" could not be found!", dPayload.intent)) end
+    if type(ref) ~= "function" then return self.logger:warning(string.format("Intent \"%s\" is not callable!", dPayload.intent)) end
     
     -- Attempt to invoke the requested intent with the payload data.
     self.logger:info(string.format("Attempting to invoke intent \"%s\" with arguments {%s}", dPayload.intent, table.concat(dPayload.args, ", ")))
     
     ---@type number
     local snap = socket.gettime()
-    local s, m = pcall(c, table.unpack(dPayload.args))
+    local s, m = pcall(ref, table.unpack(dPayload.args))
     
     if not s then return self.logger:warning("Intent failed with the following error: " .. tostring(m)) end
     
@@ -204,7 +187,9 @@ function PseudoWS:dispatch(payload)
     -- If the payload requested a response post-execution, we'll send the intent's output.
     if dPayload.reply then
         self.logger:info("The other side requested a reply!  Sending intent result...")
-        self:sendMessage(dPayload.reply, { m })
+        if type(m) ~= "table" then m = { m } end
+    
+        self:sendMessage(dPayload.reply, m)
     end
 end
 
