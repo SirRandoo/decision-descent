@@ -196,11 +196,6 @@ end
 --- Processes any messages received through the socket.
 ---
 function PseudoWS:processMessage()
-    local r, _, e = socket.select({ self.socket }, nil, 1)
-    
-    -- If there are no readable sockets, we'll return.
-    if not r or e then return end
-    
     -- Attempt to retrieve a line from the socket.
     local s, m = self.socket:receive()
     
