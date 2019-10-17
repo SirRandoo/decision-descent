@@ -50,6 +50,7 @@ local Payload = {}
 ---@field public port number @The port to connect to when `PseudoWS:connect` is called
 ---@field socket table
 ---@field listener thread
+---@field queue Payload[]
 ---@field logger Logger
 ---@field intents table<string, function>
 local PseudoWS = {}
@@ -67,7 +68,7 @@ function PseudoWS.create()
         port = 0,
         socket = nil,
         listener = nil,
-        manager = nil,
+        queue = {},
         logger = utils.getLogger(const.meta.id .. ".http"),
         intents = require("intents")
     }
@@ -113,11 +114,26 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
     if not s then
         self.logger:warning("Could not send message to client!")
         self.logger:warning(string.format("Error message: %s", m))
+        self.logger:info("Falling back to queuing message...")
+        table.insert(self.queue, payload)
         return
     end
     
     -- If the message was sent, we'll log the number of bytes sent.
     self.logger:info(string.format("%d bytes sent!", tonumber(s)))
+    
+    -- Clear queued messages
+    while #self.queue > 0 do
+        local queued = self.queue[1]
+        
+        local status, message = self.socket:send(json.encode(queued))
+        
+        if not status then
+            break
+        end
+        
+        table.remove(self.queue, 1)
+    end
 end
 
 ---
