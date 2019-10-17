@@ -92,8 +92,8 @@ class Poll(QtWidgets.QWidget):
         
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
-        
-        layout.addItem(self._time_indicator, 0, 0)
+
+        layout.addWidget(self._time_indicator, 0, 0)
     
     # Properties
     def is_multi(self) -> bool:
@@ -127,8 +127,10 @@ class Poll(QtWidgets.QWidget):
         layout: QtWidgets.QGridLayout = self.layout()
         
         self._choices.append(Choice(identifier, name, list(aliases)))
-        layout.addItem(c.display, layout.rowCount(), 1)
-        self.reset()
+        layout.addWidget(c.display, layout.rowCount(), 1)
+
+        if self._timer.isActive():
+            self.reset()
     
     def remove_choice(self, target: str):
         """Removes a choice from the poll.
@@ -142,7 +144,7 @@ class Poll(QtWidgets.QWidget):
                     c = self._choices.pop(self._choices.index(choice))
                     
                     layout: QtWidgets.QGridLayout = self.layout()
-                    layout.removeItem(c.display)
+                    layout.removeWidget(c.display)
                 
                 except IndexError:
                     pass  # It's already been removed
