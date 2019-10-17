@@ -66,9 +66,15 @@ class HTTP(QtCore.QObject):
     def connect(self):
         """Connects the socket to the specified host and port.  If host and port
         are omitted, the most recent host:port will be used."""
+        self.LOGGER.info('GETTING APPLICATION INSTANCE...')
         app: custom.QApplication = custom.QApplication.instance()
-        port = app.client.settings['extensions']['descentisaac']['http']['port'].value
 
+        self.LOGGER.info('GETTING PORT')
+        port = app.client.settings['extensions']['descentclient']['http']['port'].value
+
+        self.LOGGER.info(f'PORT {port}')
+
+        self.LOGGER.info('BINDING SOCKET')
         if not self._socket.listen(QtNetwork.QHostAddress.LocalHost, port):
             self.LOGGER.critical(f'Could not create a server on port {port}')
             return self.LOGGER.critical(f'Error message:  {self._socket.errorString()}')
