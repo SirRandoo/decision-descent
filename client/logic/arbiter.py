@@ -66,6 +66,10 @@ class Arbiter(QtCore.QObject):
         self.add_intent('polls.create', self.polls_create)
         self.add_intent('polls.multi.create', self.polls_multi_create)
         self.add_intent('polls.delete', self.polls_delete)
+
+        self._client.aboutToStart.connect(self._http.connect)
+        self._client.aboutToStop.connect(self._http.disconnect)
+        self._http.onResponse.connect(self.process_message)
     
     def add_intent(self, path: str, func: typing.Callable):
         """Registers an intent.
