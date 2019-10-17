@@ -337,16 +337,16 @@ function DescentIsaac:registerCallbacks()
     self.logger:info("Registering callbacks...")
     local c = 0
     
-    for k, v in pairs(self) do
+    for k, v in pairs(DescentIsaac) do
         if ModCallbacks[k] ~= nil then
-            self.logger:info("Registering callback \"%s\"...", k)
+            self.logger:info(string.format("Registering callback \"%s\"...", k))
             self.inst:AddCallback(ModCallbacks[k], v)
             
             c = c + 1
         end
     end
     
-    self.logger:info("Registered %d callbacks!", tonumber(c))
+    self.logger:info(string.format("Registered %d callbacks!", tonumber(c)))
 end
 
 ---
