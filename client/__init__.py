@@ -61,6 +61,13 @@ class DescentClient(utils.dataclasses.Extension):
                                   tooltip='Settings related to the Decision Descent extension.')
             
             t.add_children(*self.generate_settings())
+
+            h = qsettings.Setting('http', tooltip='Settings related to the HTTP aspect of the mod.')
+            h.add_children(
+                qsettings.Setting('port', 25565, data={'maximum': 99999, 'minimum': 0},
+                                  tooltip='The port to bind listen for new connections on.')
+            )
+            t.add_child(h)
             
             self.LOGGER.debug(f'Adding {self.DISPLAY_NAME} setting category to extension category...')
             self.bot.settings['extensions'].add_child(t)
@@ -76,6 +83,17 @@ class DescentClient(utils.dataclasses.Extension):
     
     def validate_settings(self):
         """Validates the extension's settings."""
+        try:
+            self.bot.settings['extensions']['descentclient']['http']['port']
+
+        except KeyError:
+            h = qsettings.Setting('http', tooltip='Settings related to the HTTP aspect of the mod.')
+            h.add_children(
+                qsettings.Setting('port', 25565, data={'maximum': 99999, 'minimum': 0},
+                                  tooltip='The port to bind listen for new connections on.')
+            )
+    
+            self.bot.settings['extensions']['descentclient'].add_child(h)
     
     @staticmethod
     def generate_settings() -> typing.List[qsettings.Setting]:
@@ -157,6 +175,6 @@ class DescentClient(utils.dataclasses.Extension):
     def teardown(self):
         """Tears down Decision Descent."""
         self.LOGGER.warning('Disconnecting from client...')
-        self._http.disconnect()
+        self._arbiter._http.disconnect()
         
         super(DescentClient, self).teardown()
