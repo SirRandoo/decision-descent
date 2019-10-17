@@ -151,8 +151,7 @@ local Version = {
         if this.micro < that.micro then return false end
         
         return true
-    end,
-    __tostring = function() return string.format("%d.%d.%d", self.major, self.minor, self.micro) end
+    end
 }
 Version.__index = Version
 
@@ -177,10 +176,17 @@ end
 function Version.fromString(version)
     local t = {}  ---@type string[]
     
-    for s in string.gmatch(version, "%d+") do t[#t] = s end
+    for s in string.gmatch(version, "%d+") do table.insert(t, tonumber(s)) end
     
-    return t
+    return Version.new(table.unpack(t))
 end
+
+---
+--- Returns the version as a string.
+---
+---@return string
+function Version:toString() return string.format("%d.%d.%d", self.major, self.minor, self.micro) end
+
 
 ---@field id string
 ---@field name string
@@ -291,7 +297,7 @@ end
 ---
 function DescentIsaac:initialize()
     self.logger:info("Initializing Decision Descent...")
-    self.logger:info(string.format("Decision Descent v%s", tostring(self.metadata:getVersion())))
+    self.logger:info(string.format("Decision Descent v%s", self.metadata:getVersion():toString()))
     
     if not self.scheduler.running then
         self.logger:info("Starting scheduler...")
@@ -499,6 +505,11 @@ function DescentIsaac:generatePoll()
 end
 
 
+--[[ Declarations ]]--
+
+local Mod = DescentIsaac.create()
+
+
 --[[  Callbacks  ]]--
 ---
 --- Invoked when the player starts a new run.
@@ -552,7 +563,7 @@ function DescentIsaac.MC_POST_RENDER()
         local sX, sY = utils.getScreenSize()
         
         -- Render the version if it's an alpha build
-        local vText = string.format("Decision Descent v%s", tostring(DescentIsaac.metadata.getVersion()))
+        local vText = string.format("Decision Descent v%s", Mod.metadata:getVersion():toString())
         local rX = math.abs(math.floor(tonumber(sX) / 3) - Isaac.GetTextWidth(vText))
         
         Isaac.RenderScaledText(vText, rX, sY - 35, 0.5, 0.5, 1.0, 1.0, 1.0, 0.8)
