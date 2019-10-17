@@ -439,8 +439,8 @@ function DescentIsaac:generatePoll()
                             dup = true
                         end
                     end
-                    
-                    if not dup then choices[#choices + 1] = { id = i.ID, name = i.Name } end
+        
+                    if not dup and i ~= nil then table.insert(choices, { id = i.ID, name = i.Name }) end
                 end
                 
                 if #choices <= 1 then return self.logger:warning("Could not generate enough options for a poll!") end
@@ -450,13 +450,13 @@ function DescentIsaac:generatePoll()
                 -- Transforming the item name into aliases should be handled by the other half.
                 local dChoices = {}
                 local aliases = {}
-                for _, item in pairs(choices) do
-                    local dChoice = tostring(item.ID)
-                    dChoices[#dChoices + 1] = dChoice
+                for _, item in ipairs(choices) do
+                    local dChoice = tostring(item.id)
+                    table.insert(dChoices, dChoice)
                     
                     if aliases[dChoice] == nil then aliases[dChoice] = {} end
-                    
-                    table.insert(aliases[dChoice], item.Name)
+        
+                    table.insert(aliases[dChoice], item.name)
                 end
                 
                 -- Time for the mess that is poll generation
