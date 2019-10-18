@@ -57,11 +57,18 @@ class Choice:
     def fuzzy_similar(self, subject: str) -> bool:
         """Attempts to match a string to any id, name, or alias registered to
         this choice.
-        
+
         Method: similarity"""
-        return difflib.get_close_matches(
-            subject, [self.id.lower(), self.name.lower()] + [a.lower() for a in self.aliases]
-        ) >= 90
+        return len(difflib.get_close_matches(
+            subject, [self.id.lower(), self.name.lower()] + [a.lower() for a in self.aliases], 1, 0.95
+        )) > 0
+
+    def fuzzy_case(self, subject: str) -> bool:
+        """Attempts to match a string to any id, name, or alias registered
+        to this choice."""
+        return subject == self.id.lower() \
+               or subject == self.name.lower() \
+               or any([subject == a.lower() for a in self.aliases])
 
 
 class Poll(QtWidgets.QWidget):
@@ -156,7 +163,7 @@ class Poll(QtWidgets.QWidget):
         """Checks whether or not the passed target is currently assigned to any
         choice in this poll."""
         for choice in self._choices.copy():
-            if choice.id == target.lower() or any([a == target.lower() for a in choice.aliases]):
+            if choice.fuzzy_match(target):
                 return True
         
         return False
@@ -164,6 +171,14 @@ class Poll(QtWidgets.QWidget):
     def get_choices(self) -> typing.List[Choice]:
         """Returns a copy of the poll's choices."""
         return self._choices.copy()
+
+    def get_nearest_choice(self, target: str) -> Choice:
+        """Attempts to get the closest matching choice from the query given."""
+        for choice in self._choices.copy():
+            if choice.fuzzy_match(target):
+                return choice
+    
+        raise ValueError('No valid choices could be found!')
     
     # Participants methods
     def add_participant(self, name: str, target: typing.Union[Choice, str]):

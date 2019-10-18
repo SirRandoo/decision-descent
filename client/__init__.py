@@ -171,8 +171,13 @@ class DescentClient(utils.dataclasses.Extension):
             return
         
         for poll in self._arbiter.get_polls():
-            if poll.is_choice(message.content):
-                poll.add_participant(message.user.username, message.content)
+            self.LOGGER.info(f'Poll:{poll.intent},isChoice:{poll.is_choice(message.content)}')
+    
+            try:
+                poll.add_participant(message.user.username, poll.get_nearest_choice(message.content))
+    
+            except ValueError:
+                pass
     
     # Lifecycle methods
     def setup(self):
