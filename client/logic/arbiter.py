@@ -285,3 +285,6 @@ class Arbiter(QtCore.QObject):
             
             except errors.DescentError as e:
                 self.LOGGER.warning(f"Arbiter couldn't execute intent {p.intent}!  {e.__class__.__name__}({e!s})")
+
+        finally:
+            self.remove_poll(p)
