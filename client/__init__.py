@@ -167,6 +167,9 @@ class DescentClient(utils.dataclasses.Extension):
     @logic.catchable.signal
     def process_chat_message(self, message: utils.dataclasses.Message):
         """Processes a message from chat."""
+        if not self._arbiter.get_polls():
+            return
+        
         for poll in self._arbiter.get_polls():
             if poll.is_choice(message.content):
                 poll.add_participant(message.user.username, message.content)
@@ -181,11 +184,11 @@ class DescentClient(utils.dataclasses.Extension):
         
         self.LOGGER.info('Stitching settings...')
         self.stitch_settings()
-        
-        self.LOGGER.info('Setting up bindings...')
+
+        self.LOGGER.info('Binding aboutToStart to DescentClient.bind_to_platforms ...')
         self.bot.aboutToStart.connect(self.bind_to_platforms)
 
-        self.LOGGER.debug('Binding Arbiter.pollCreated » DescentIsaac.broadcast')
+        self.LOGGER.debug('Binding Arbiter.pollCreated to DescentClient.broadcast ...')
         self._arbiter.pollCreated.connect(self.broadcast)
         
         self.set_state(utils.enums.ExtensionStates.SET_UP)
