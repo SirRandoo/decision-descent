@@ -25,7 +25,7 @@
 import logging
 import typing
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 
 from . import catchable, errors
 from .http import HTTP
@@ -50,6 +50,7 @@ class Arbiter(QtCore.QObject):
         # Private attributes
         self._http: HTTP = HTTP(parent=self)
         self._client: 'ShovelBot' = client
+        self._container = QtWidgets.QDialog(self._client)
         
         self._layout = None
         self._level_master = None
@@ -70,6 +71,9 @@ class Arbiter(QtCore.QObject):
         self._client.aboutToStart.connect(self._http.connect)
         self._client.aboutToStop.connect(self._http.disconnect)
         self._http.onResponse.connect(self.process_message)
+
+        self._container.setWindowTitle('Decision Descent - Poll Overview')
+        self._container.setLayout(QtWidgets.QVBoxLayout())
     
     def add_intent(self, path: str, func: typing.Callable):
         """Registers an intent.
@@ -183,6 +187,10 @@ class Arbiter(QtCore.QObject):
         
         self._polls.append(p)
         p.onConclude.connect(self.process_poll)
+        self._container.layout().addWidget(p)
+
+        if not self._container.isVisible():
+            self._container.show()
         
         return p
     
@@ -199,6 +207,7 @@ class Arbiter(QtCore.QObject):
     def remove_poll(self, poll: widgetz.Poll):
         """Unregisters a poll from the arbiter."""
         del self._polls[self._polls.index(poll)]
+        self._container.layout().removeWidget(poll)
     
     def get_poll(self, target: str) -> widgetz.Poll:
         """Gets a poll from the arbiter's poll registry."""
