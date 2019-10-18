@@ -101,7 +101,7 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
     if reply then payload.reply = reply end
     
     -- Send the message to the other side.
-    local s, m = self.socket:send(json.encode(payload))
+    local s, m = self.socket:send(json.encode(payload) .. "\r\n")
     
     -- If the message couldn't be sent, we'll log the error.
     if not s then
@@ -118,8 +118,8 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
     -- Clear queued messages
     while #self.queue > 0 do
         local queued = self.queue[1]
-        
-        local status, message = self.socket:send(json.encode(queued))
+    
+        local status, message = self.socket:send(json.encode(queued) .. "\r\n")
         
         if not status then
             break
