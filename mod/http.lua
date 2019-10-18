@@ -180,7 +180,7 @@ function PseudoWS:dispatch(payload)
     
     if not s then return self.logger:warning("Intent failed with the following error: " .. tostring(m)) end
     
-    self.logger:info(string.format("Intent execution took %d seconds.", socket.gettime() - snap))
+    self.logger:info(string.format("Intent execution took %s seconds.", tostring(socket.gettime() - snap)))
     
     -- If the payload requested a response post-execution, we'll send the intent's output.
     if dPayload.reply then
