@@ -218,6 +218,9 @@ class Arbiter(QtCore.QObject):
         
         try:
             r = message(self._intents)
+
+        except KeyError:
+            self.LOGGER.warning(f'Intent "{message.intent} does not exist!  Ignoring...')
         
         except errors.DescentError as e:
             self.LOGGER.warning(f'Message could not be executed!  ({e.__class__.__name__}({e!s}))')
