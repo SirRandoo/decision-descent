@@ -272,7 +272,7 @@ class Arbiter(QtCore.QObject):
 
         except KeyError:
             self.LOGGER.info('Passing intent to mod...')
-            self._http.send_message(dataklasses.Message(p.intent, [id_], {}, None))
+            self._http.send_message(dataklasses.Message(p.intent, (id_,), {}, None))
         
         except errors.DescentError as e:
             self.LOGGER.warning(f"Arbiter couldn't process poll {id_}.  {e.__class__.__name__}({e!s})")
