@@ -28,6 +28,7 @@ local utils = require("utils")
 
 ---@class Task
 ---
+---@field id string
 ---@field func function
 ---@field persist boolean
 local Task = {}
@@ -36,21 +37,16 @@ Task.__index = {}
 ---
 --- Creates a new task
 ---
+---@param id string  @The identifier for this task.
 ---@param f function  @The function to call
 ---@param p boolean  @An indicator that this task should rejoin the queue once the function has been called.
 ---@return Task
-function Task.new(f, p)
-    local self = { func = f, persist = p, __call = f, __newindex = function() end }
+function Task.new(id, f, p)
+    local self = { id = id, func = f, persist = p, __call = f, __newindex = function() end }
     setmetatable(self, Task)
     
     return self
 end
-
----
---- Whether or not the task should be revived.
----
----@return boolean
-function Task:revivable() return self.persist end
 
 ---
 --- Schedulers are responsible for managing methods that should be called away
@@ -81,38 +77,44 @@ end
 ---
 ---@param f function
 ---@param revive boolean  @Whether or not the function should be re-queued when it finishes executing.
-function Scheduler:schedule(f, revive)
+function Scheduler:schedule(id, f, revive)
     if type(f) ~= "function" then return end
     if revive == nil then revive = false end
     
-    table.insert(self.tasks, Task.new(f, revive))
+    table.insert(self.tasks, Task.new(id, f, revive))
 end
 
 ---
 --- Initiates the scheduler.
 ---
 function Scheduler:start()
-    if self.thread ~= nil and coroutine.status(self.thread) == "running" then return end
-    if self.thread ~= nil and coroutine.status(self.thread) == "paused" then return coroutine.resume(self.thread) end
+    if self.thread ~= nil and coroutine.status(self.thread) == "running" then return self.logger:warning("Scheduler already running!") end
+    if self.thread ~= nil and coroutine.status(self.thread) == "paused" then
+        self.logger:info("Resuming scheduler...")
+        return coroutine.resume(self.thread)
+    end
     
     self.running = true
     
     self.thread = coroutine.create(function()
         while self.running do
-            if self.tasks then
-                local t = self.tasks[1]  ---@type Task
-                local status, result = pcall(t.func)
+            if #self.tasks <= 0 then coroutine.yield() end
     
-                if not status then self.logger:debug("Task failed! " .. tostring(status) .. "," .. tostring(result)) end
-                table.remove(self.tasks, 1)
+            local t = self.tasks[1]  ---@type Task
     
-                if t.persist then
-                    table.insert(self.tasks, t)
-                end
+            self.logger:info(string.format("Executing task \"%s\" (keepalive:%s)", t.id, tostring(t.persist)))
+            local status, result = pcall(t.func)
+    
+            if not status then self.logger:debug("Task failed! " .. tostring(status) .. "," .. tostring(result)) end
+            table.remove(self.tasks, 1)
+    
+            if t.persist then
+                table.insert(self.tasks, t)
             end
         end
     end)
     
+    self.logger:info("Starting scheduler thread...")
     coroutine.resume(self.thread)
 end
 

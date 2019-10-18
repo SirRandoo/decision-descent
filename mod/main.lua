@@ -187,7 +187,6 @@ end
 ---@return string
 function Version:toString() return string.format("%d.%d.%d", self.major, self.minor, self.micro) end
 
-
 ---@field id string
 ---@field name string
 ---@field version Version
@@ -317,14 +316,6 @@ end
 ---
 function DescentIsaac:schedule()
     self.logger:info("Scheduling recurring tasks...")
-    
-    self.logger:info("Scheduling reoccurring HTTP reader...")
-    self.scheduler:schedule(
-            function()
-                self.http:processMessage()
-            end,
-            true
-    )
 end
 
 ---
@@ -358,9 +349,13 @@ end
 function DescentIsaac:sendCollectiblePoll(choices, aliases)
     if aliases == nil then aliases = {} end
     
-    self.scheduler:schedule(function()
-        self.http:sendMessage("polls.create", choices, aliases, "player.grant.collectible")
-    end, false)
+    self.scheduler:schedule(
+            'createCollectiblePoll',
+            function()
+                self.http:sendMessage("polls.create", choices, aliases, "player.grant.collectible")
+            end,
+            false
+    )
 end
 
 ---
@@ -372,9 +367,12 @@ end
 function DescentIsaac:sendMultiCollectiblePoll(choices, aliases)
     if aliases == nil then aliases = {} end
     
-    self.scheduler:schedule(function()
-        self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.collectible")
-    end, false)
+    self.scheduler:schedule(
+            "createMultiCollectiblePoll",
+            function()
+                self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.collectible")
+            end, false
+    )
 end
 
 ---
@@ -385,9 +383,13 @@ end
 function DescentIsaac:sendDevilPoll(choices, aliases)
     if aliases == nil then aliases = {} end
     
-    self.scheduler:schedule(function()
-        self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.devil")
-    end, false)
+    self.scheduler:schedule(
+            "createDevilPoll",
+            function()
+                self.http:sendMessage("polls.multi.create", choices, aliases, "player.grant.devil")
+            end,
+            false
+    )
 end
 
 ---
@@ -395,6 +397,7 @@ end
 ---
 function DescentIsaac:generatePoll()
     self.scheduler:schedule(
+            "pollGenerator",
             function()
                 self.logger:info("Generating poll...")
                 
@@ -445,7 +448,7 @@ function DescentIsaac:generatePoll()
                             dup = true
                         end
                     end
-        
+    
                     if not dup and i ~= nil then table.insert(choices, { id = i.ID, name = i.Name }) end
                 end
                 
@@ -461,7 +464,7 @@ function DescentIsaac:generatePoll()
                     table.insert(dChoices, dChoice)
                     
                     if aliases[dChoice] == nil then aliases[dChoice] = {} end
-        
+    
                     table.insert(aliases[dChoice], item.name)
                 end
     
@@ -525,9 +528,13 @@ local Mod = DescentIsaac.create()
 function DescentIsaac.MC_POST_GAME_STARTED(isSave)
     if isSave then return end
     
-    Mod:schedule(function()
-        Mod:sendMessage("polls.delete", { "*" })
-    end, false)
+    Mod.scheduler:schedule(
+            "pollDeleter",
+            function()
+                Mod.http:sendMessage("polls.delete", { "*" })
+            end,
+            false
+    )
 end
 
 ---
@@ -538,9 +545,13 @@ end
 ---
 function DescentIsaac.MC_PRE_GAME_EXIT(shouldSave)
     if shouldSave then
-        Mod:schedule(function()
-            Mod:sendMessage("client.close")
-        end, false)
+        Mod.scheduler:schedule(
+                "gameExitNotifier",
+                function()
+                    Mod.http:sendMessage("client.close")
+                end,
+                false
+        )
     end
 end
 
@@ -551,9 +562,13 @@ end
 --- changed levels.
 ---
 function DescentIsaac.MC_POST_NEW_LEVEL()
-    Mod:schedule(function()
-        Mod:sendMessage("client.state.level.changed")
-    end, false)
+    Mod.scheduler:schedule(
+            "levelChangeNotifier",
+            function()
+                Mod.http:sendMessage("client.state.level.changed")
+            end,
+            false
+    )
 end
 
 ---
@@ -608,9 +623,13 @@ end
 --- player enters a *new*, supported room.
 ---
 function DescentIsaac.MC_POST_NEW_ROOM()
-    Mod.scheduler.schedule(function()
-        Mod.http:sendMessage("client.state.room.changed")
-    end, false)
+    Mod.scheduler:schedule(
+            "roomChangeNotifier",
+            function()
+                Mod.http:sendMessage("client.state.room.changed")
+            end,
+            false
+    )
     
     local game = Game()
     local cRoom = game:GetRoom()
@@ -664,6 +683,16 @@ end
 function DescentIsaac.MC_POST_UPDATE()
     if Isaac.GetFrameCount() % 30 == 0 then
         Mod.scheduler:start()  -- Ensure the scheduler is always running
+    end
+    
+    if Isaac.GetFrameCount() % 60 == 0 then
+        Mod.scheduler:schedule(
+                'httpReader',
+                function()
+                    Mod.http:processMessage()
+                end,
+                false
+        )
     end
 end
 
