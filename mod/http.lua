@@ -109,6 +109,11 @@ function PseudoWS:sendMessage(intent, arguments, kwargs, reply)
         self.logger:warning(string.format("Error message: %s", m))
         self.logger:info("Falling back to queuing message...")
         table.insert(self.queue, payload)
+    
+        if m == "closed" then
+            self:connect(self.host, self.port)
+        end
+        
         return
     end
     
