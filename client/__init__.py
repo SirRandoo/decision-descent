@@ -46,6 +46,7 @@ class DescentClient(utils.dataclasses.Extension):
         
         # Internal attributes
         self._arbiter = logic.Arbiter(self.bot, parent=self)
+        self._platforms: typing.List[str] = []
     
     # Settings methods
     def register_settings(self):
@@ -142,18 +143,28 @@ class DescentClient(utils.dataclasses.Extension):
     def broadcast(self, poll: descent_widgets.Poll):
         """Broadcasts a new poll to all available platforms."""
         if self.bot.settings['extensions']['descentclient']['polls']['chat'].value:
-            for ext in self.bot.extensions:
+            for ext in self.bot.extensions.copy().values():
                 if isinstance(ext, utils.dataclasses.Platform):
                     for choice in poll.get_choices():
                         ext.send_message(f'[#{choice.id}] {choice.name}')
 
+                    if ext.NAME not in self._platforms:
+                        self.LOGGER.info(f'Binding {ext.NAME}.onMessage to {self.NAME}.process_chat_message ...')
+                        ext.onMessage.connect(self.process_chat_message)
+                        self._platforms.append(ext.NAME)
+
+    @logic.catchable.signal
     def bind_to_platforms(self):
         """Binds the `onMessage` signal from all platforms to this extension's
         message handler."""
-        for ext in self.bot.extensions:
-            if isinstance(ext, utils.dataclasses.Platform):
+        for ext in self.bot.extensions.copy().values():
+            if isinstance(ext, utils.dataclasses.Platform) and ext.NAME not in self._platforms:
+                self.LOGGER.info(f'Binding {ext.NAME}.onMessage to {self.NAME}.process_chat_message ...')
+                
                 ext.onMessage.connect(self.process_chat_message)
+                self._platforms.append(ext.NAME)
 
+    @logic.catchable.signal
     def process_chat_message(self, message: utils.dataclasses.Message):
         """Processes a message from chat."""
         for poll in self._arbiter.get_polls():
