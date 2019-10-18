@@ -39,8 +39,6 @@ def signal(func: typing.Callable) -> typing.Callable:
             sig = inspect.signature(func)
             
             if sig.parameters:
-                args = args[:len(sig.parameters)]
-                
                 return func(*args, **kwargs)
             
             else:
