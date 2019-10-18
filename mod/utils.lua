@@ -48,16 +48,6 @@ function Logger.new(name)
 end
 
 ---
---- Sets the file all log statements will be outputted to.
----
---- If file is `nil`, log statements will be outputted to Isaac's log file.
----
----@param file file  @A file handle to use for writing.
-function Logger:toFile(file)
-    self.file = file
-end
-
----
 --- Formats log message components into the format defined in `fmt`.
 ---
 ---@param level string
@@ -89,7 +79,11 @@ end
 function Logger:log(level, message)
     local f = Isaac.DebugString
     
-    if self.file ~= nil then f = self.file.write end
+    if self.file ~= nil then
+        f = function(content)
+            self.file:write(content .. "\r\n")
+        end
+    end
     
     f(self:format(level, message))
 end
@@ -163,16 +157,23 @@ return {
     ---
     ---@param name string
     ---@return Logger
-    getLogger = function(name, file)
+    getLogger = function(name)
         if not name then name = "root" end
-        if not file then
-            if not logFile then logFile = io.open(getDirectory() .. "/log.txt", "w") end
+    
+        if not logFile then
+            local handle, message, _ = io.open(getDirectory() .. "/log.txt", "w+")
+            Isaac.DebugString(tostring(handle))
         
-            file = logFile
+            if handle == nil then
+                Isaac.DebugString('Could not open log.txt file for writing!  Reason: ' .. message)
+                logFile = nil
+            else
+                logFile = handle
+                handle:write('Testing\r\n')
+            end
         end
         
         if loggers[name] == nil then loggers[name] = Logger.new(name) end
-        if file ~= nil then loggers[name]:toFile(file) end
         
         return loggers[name]
     end,
