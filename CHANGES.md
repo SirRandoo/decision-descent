@@ -30,6 +30,18 @@
 * Added error handling support to the scheduler.
 * Migrated `settimeout` to after the socket connects.
 * Added generic support for all platforms that implement the `Platform` dataclass.
+* Fixed the mod not reconnected to the client.
+* Fixed the client silently consuming poll choices.
+* Fixed the arbiter crashing when a reply intent was sent.
+* Fixed the arbiter crashing when an invalid intent was sent.
+* Fixed the client not binding to all registered platforms.
+* Fixed the client wastefully processing every chat message.
+* Fixed the client crashing the logging framework with unicode.
+* Made chat votes slightly fuzzier
+* Fixed the mod not properly inserting newlines after a payload was sent.
+* Added a queue to the mod's http handler.
+* Simplified the scheduler thread.
+* Added identifiers to scheduler tasks for debugging ease.
 
 
 # Decision Descent v0.5.0
