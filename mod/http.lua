@@ -195,6 +195,9 @@ end
 --- Processes any messages received through the socket.
 ---
 function PseudoWS:processMessage()
+    local readable, _, status = socket.select({ self.socket }, nil, 0)
+    if status == "timeout" or #readable <= 0 then return end
+    
     -- Attempt to retrieve a line from the socket.
     local message, recStatus = self.socket:receive()
     
