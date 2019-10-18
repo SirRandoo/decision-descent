@@ -157,29 +157,28 @@ class Arbiter(QtCore.QObject):
                 break
     
     # Poll methods
-    @catchable.signal
     def add_poll(self, callback: str, *choices: str, **aliases: typing.Dict[str, typing.List[str]]) -> widgetz.Poll:
         """Registers a poll with the arbiter.
         
         :param callback: The intent to invoke when the poll conclude."""
         callback = callback.lower()
-        choices = [c.lower() for c in choices]
+        t = [c.lower() for c in choices]
         
         self.LOGGER.info(f'Received a request to register a new poll!')
-        self.LOGGER.info(f'  • Callback → {callback}')
-        self.LOGGER.info(f'  • Choices')
-        
-        for c in choices:
-            self.LOGGER.info(f'    • {c}')
-        
-        self.LOGGER.info(f'  • Aliases')
+        self.LOGGER.info(f'  - Callback > {callback}')
+        self.LOGGER.info(f'  - Choices')
+
+        for c in t:
+            self.LOGGER.info(f'    - {c}')
+
+        self.LOGGER.info(f'  - Aliases')
         
         for c, a in aliases.items():
-            self.LOGGER.info(f'    • {c} → {", ".join(a)}')
+            self.LOGGER.info(f'    - {c} > {", ".join(a)}')
 
         p = widgetz.Poll(callback)
-        
-        for c in choices:
+
+        for c in t:
             p.add_choice(c, c, *aliases.get(c, []))
         
         self._polls.append(p)
