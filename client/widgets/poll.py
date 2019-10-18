@@ -174,6 +174,19 @@ class Poll(QtWidgets.QWidget):
 
     def get_nearest_choice(self, target: str) -> Choice:
         """Attempts to get the closest matching choice from the query given."""
+        if target.startswith('#'):
+            try:
+                index = int(target.lstrip('#'))
+    
+            except ValueError:
+                pass
+    
+            else:
+                if index > len(self._choices) or index < 0:
+                    raise ValueError('Index out of range!')
+        
+                return self._choices[index]
+        
         for choice in self._choices.copy():
             if choice.fuzzy_match(target):
                 return choice
