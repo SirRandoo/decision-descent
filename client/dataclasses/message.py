@@ -86,4 +86,4 @@ class Message:
                 f'intent="{self.intent}" '
                 f'args=[{",".join(self.args)}] '
                 f'kwargs={{{json.dumps(self.kwargs)}}} '
-                f'reply="{self.reply}"')
+                f'reply="{self.reply}">')
